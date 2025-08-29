@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { db } from '@/db';
+import { db as defaultDb } from '@/db';
 import { partners, locations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -26,6 +26,15 @@ const locationSchema = z.object({
   hours: z.string().optional(),
 });
 
+async function getDb() {
+    if (!process.env.POSTGRES_URL) {
+        throw new Error("Database not configured. POSTGRES_URL is missing.");
+    }
+    const { db } = await import('@/db');
+    return db;
+}
+
+
 // Partner Actions
 export async function createPartner(prevState: z.infer<typeof formActionState>, formData: FormData) {
   const validatedFields = partnerSchema.safeParse(Object.fromEntries(formData.entries()));
@@ -38,6 +47,7 @@ export async function createPartner(prevState: z.infer<typeof formActionState>, 
   }
 
   try {
+    const db = await getDb();
     await db.insert(partners).values(validatedFields.data);
     revalidatePath('/admin');
     revalidatePath('/partners');
@@ -58,6 +68,7 @@ export async function updatePartner(id: number, prevState: z.infer<typeof formAc
   }
   
   try {
+    const db = await getDb();
     await db.update(partners).set(validatedFields.data).where(eq(partners.id, id));
     revalidatePath('/admin');
     revalidatePath('/partners');
@@ -69,6 +80,7 @@ export async function updatePartner(id: number, prevState: z.infer<typeof formAc
 
 export async function deletePartner(id: number) {
   try {
+    const db = await getDb();
     await db.delete(partners).where(eq(partners.id, id));
     revalidatePath('/admin');
     revalidatePath('/partners');
@@ -91,6 +103,7 @@ export async function createLocation(prevState: z.infer<typeof formActionState>,
   }
 
   try {
+    const db = await getDb();
     await db.insert(locations).values(validatedFields.data);
     revalidatePath('/admin');
     revalidatePath('/locations');
@@ -111,6 +124,7 @@ export async function updateLocation(id: number, prevState: z.infer<typeof formA
   }
 
   try {
+    const db = await getDb();
     await db.update(locations).set(validatedFields.data).where(eq(locations.id, id));
     revalidatePath('/admin');
     revalidatePath('/locations');
@@ -122,6 +136,7 @@ export async function updateLocation(id: number, prevState: z.infer<typeof formA
 
 export async function deleteLocation(id: number) {
   try {
+    const db = await getDb();
     await db.delete(locations).where(eq(locations.id, id));
     revalidatePath('/admin');
     revalidatePath('/locations');
