@@ -11,6 +11,7 @@ async function getAdminData() {
          return { partners: [], locations: [] };
     }
     try {
+        const { db } = await import('@/db');
         const partners = await db.query.partners.findMany();
         const locations = await db.query.locations.findMany();
         return { partners, locations };

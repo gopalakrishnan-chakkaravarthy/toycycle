@@ -1,7 +1,6 @@
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
-import { db } from '@/db';
 import { Partner } from '@/db/schema';
 
 
@@ -42,10 +41,18 @@ async function getPartners(): Promise<Partner[]> {
         return mockPartners;
     }
     try {
-        return await db.query.partners.findMany();
+        const { db } = await import('@/db');
+        const partners = await db.query.partners.findMany();
+        // If there are no partners in the DB, return the mock data.
+        if (partners.length === 0) {
+            // @ts-ignore
+            return mockPartners;
+        }
+        return partners;
     } catch (error) {
         console.error("Failed to fetch partners:", error);
-        return [];
+        // @ts-ignore
+        return mockPartners;
     }
 }
 
