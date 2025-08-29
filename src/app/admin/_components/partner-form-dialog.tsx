@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Partner } from '@/db/schema';
-import { useFormState } from 'react';
+import { useFormState } from 'react-dom';
 import { createPartner, updatePartner } from '../actions';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
