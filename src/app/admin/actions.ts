@@ -1,8 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { db as defaultDb } from '@/db';
-import { partners, locations, accessoryTypes } from '@/db/schema';
+import { partners, locations, accessoryTypes, toyConditions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -27,6 +26,10 @@ const locationSchema = z.object({
 });
 
 const accessoryTypeSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+});
+
+const toyConditionSchema = z.object({
   name: z.string().min(1, 'Name is required'),
 });
 
@@ -199,5 +202,57 @@ export async function deleteAccessoryType(id: number) {
     return { message: 'Accessory type deleted successfully.' };
   } catch (error) {
     return { error: 'Failed to delete accessory type.' };
+  }
+}
+
+// Toy Condition Actions
+export async function createToyCondition(prevState: z.infer<typeof formActionState>, formData: FormData) {
+  const validatedFields = toyConditionSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Validation failed',
+      error: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+
+  try {
+    const db = await getDb();
+    await db.insert(toyConditions).values(validatedFields.data);
+    revalidatePath('/admin');
+    return { message: 'Toy condition created successfully.' };
+  } catch (error) {
+    return { message: 'Failed to create toy condition.', error: 'Failed to create toy condition.' };
+  }
+}
+
+export async function updateToyCondition(id: number, prevState: z.infer<typeof formActionState>, formData: FormData) {
+  const validatedFields = toyConditionSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Validation failed',
+      error: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+
+  try {
+    const db = await getDb();
+    await db.update(toyConditions).set(validatedFields.data).where(eq(toyConditions.id, id));
+    revalidatePath('/admin');
+    return { message: 'Toy condition updated successfully.' };
+  } catch (error) {
+    return { message: 'Failed to update toy condition.', error: 'Failed to update toy condition.' };
+  }
+}
+
+export async function deleteToyCondition(id: number) {
+  try {
+    const db = await getDb();
+    await db.delete(toyConditions).where(eq(toyConditions.id, id));
+    revalidatePath('/admin');
+    return { message: 'Toy condition deleted successfully.' };
+  } catch (error) {
+    return { error: 'Failed to delete toy condition.' };
   }
 }

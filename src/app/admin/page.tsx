@@ -1,30 +1,32 @@
 
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Partner, Location, AccessoryType } from '@/db/schema';
+import { Partner, Location, AccessoryType, ToyCondition } from '@/db/schema';
 import { PartnerList } from './_components/partner-list';
 import { LocationList } from './_components/location-list';
 import { AccessoryTypeList } from './_components/accessory-type-list';
+import { ToyConditionList } from './_components/toy-condition-list';
 
 async function getAdminData() {
     if (!process.env.POSTGRES_URL) {
-         return { partners: [], locations: [], accessoryTypes: [] };
+         return { partners: [], locations: [], accessoryTypes: [], toyConditions: [] };
     }
     try {
         const { db } = await import('@/db');
         const partners = await db.query.partners.findMany();
         const locations = await db.query.locations.findMany();
         const accessoryTypes = await db.query.accessoryTypes.findMany();
-        return { partners, locations, accessoryTypes };
+        const toyConditions = await db.query.toyConditions.findMany();
+        return { partners, locations, accessoryTypes, toyConditions };
     } catch (error) {
         console.error("Failed to fetch admin data:", error);
-        return { partners: [], locations: [], accessoryTypes: [] };
+        return { partners: [], locations: [], accessoryTypes: [], toyConditions: [] };
     }
 }
 
 
 export default async function AdminPage() {
-    const { partners, locations, accessoryTypes } = await getAdminData();
+    const { partners, locations, accessoryTypes, toyConditions } = await getAdminData();
     
     return (
         <AppLayout>
@@ -55,13 +57,23 @@ export default async function AdminPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="lg:col-span-2">
+                    <Card>
                         <CardHeader>
                             <CardTitle>Manage Accessory Types</CardTitle>
                             <CardDescription>Add, edit, or remove types of kid accessories.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <AccessoryTypeList accessoryTypes={accessoryTypes as AccessoryType[]} />
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Manage Toy Conditions</CardTitle>
+                            <CardDescription>Add, edit, or remove the conditions of toys.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ToyConditionList toyConditions={toyConditions as ToyCondition[]} />
                         </CardContent>
                     </Card>
                 </div>
