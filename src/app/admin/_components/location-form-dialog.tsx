@@ -12,9 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Location } from '@/db/schema';
-import { useFormState } from 'react-dom';
+import { useActionState, useEffect } from 'react';
 import { createLocation, updateLocation } from '../actions';
-import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SubmitButton } from './submit-button';
 
@@ -33,7 +32,7 @@ const initialState = {
 export function LocationFormDialog({ isOpen, setIsOpen, location }: LocationFormDialogProps) {
   const { toast } = useToast();
   const action = location ? updateLocation.bind(null, location.id) : createLocation;
-  const [state, formAction] = useFormState(action, initialState);
+  const [state, formAction] = useActionState(action, initialState);
 
   useEffect(() => {
     if (!state) return;

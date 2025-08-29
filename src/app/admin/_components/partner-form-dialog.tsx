@@ -13,9 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Partner } from '@/db/schema';
-import { useFormState } from 'react-dom';
+import { useActionState, useEffect } from 'react';
 import { createPartner, updatePartner } from '../actions';
-import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SubmitButton } from './submit-button';
 
@@ -35,7 +34,7 @@ const initialState = {
 export function PartnerFormDialog({ isOpen, setIsOpen, partner }: PartnerFormDialogProps) {
   const { toast } = useToast();
   const action = partner ? updatePartner.bind(null, partner.id) : createPartner;
-  const [state, formAction] = useFormState(action, initialState);
+  const [state, formAction] = useActionState(action, initialState);
 
   useEffect(() => {
     if (!state) return;
