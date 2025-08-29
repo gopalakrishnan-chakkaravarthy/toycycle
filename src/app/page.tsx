@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -14,6 +15,8 @@ import { generateImpactReport } from '@/ai/flows/generate-impact-report';
 import type { GenerateImpactReportInput } from '@/ai/flows/generate-impact-report';
 import { Loader2, Zap, ToyBrick, Smile, Leaf } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
+import { useAuth } from '@/context/auth-context';
+
 
 const stats = {
   toysRedistributed: 12543,
@@ -23,6 +26,7 @@ const stats = {
 };
 
 export default function Home() {
+  const { user } = useAuth();
   const [report, setReport] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +36,16 @@ export default function Home() {
     setError(null);
     setReport(null);
 
+    if (!user) {
+        setError('You must be logged in to generate a report.');
+        setIsLoading(false);
+        return;
+    }
+
     const input: GenerateImpactReportInput = {
-      userId: 'user-123', // Mock user ID
+      userId: user.id,
       ...stats,
+      userDonations: user.role === 'user' ? stats.userDonations : undefined,
     };
 
     try {
