@@ -2,31 +2,56 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Clock } from 'lucide-react';
 import Image from 'next/image';
+import { db } from '@/db';
+import { Location } from '@/db/schema';
 
-const dropOffLocations = [
+
+const mockLocations = [
   {
+    id: 1,
     name: "Northwood Community Center",
     address: "4500 Northwood Ave, Anytown, USA",
     hours: "Mon-Fri: 9am - 6pm, Sat: 10am - 4pm",
   },
   {
+    id: 2,
     name: "Southside Public Library",
     address: "876 Library Ln, Anytown, USA",
     hours: "Tue-Sat: 11am - 7pm",
   },
   {
+    id: 3,
     name: "Greenleaf Park Office",
     address: "123 Park Dr, Anytown, USA",
     hours: "Mon-Sun: 8am - 8pm (Outdoor bin)",
   },
    {
+    id: 4,
     name: "Downtown ToyCycle Hub",
     address: "55 Central Plaza, Anytown, USA",
     hours: "Mon-Fri: 10am - 5pm",
   },
 ];
 
-export default function LocationsPage() {
+
+async function getLocations(): Promise<Location[]> {
+    if (!process.env.POSTGRES_URL) {
+        return mockLocations;
+    }
+
+    try {
+        const locations = await db.query.locations.findMany();
+        return locations;
+    } catch (error) {
+        console.error("Failed to fetch locations:", error);
+        return []; // Return empty array on error
+    }
+}
+
+
+export default async function LocationsPage() {
+  const dropOffLocations = await getLocations();
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-8 animate-fade-in">
@@ -52,7 +77,7 @@ export default function LocationsPage() {
 
         <div className="grid gap-6 sm:grid-cols-2">
           {dropOffLocations.map((location) => (
-            <Card key={location.name} className="flex flex-col">
+            <Card key={location.id} className="flex flex-col">
               <CardHeader>
                 <CardTitle>{location.name}</CardTitle>
               </CardHeader>

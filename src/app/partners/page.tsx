@@ -1,48 +1,58 @@
-
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
+import { db } from '@/db';
+import { Partner } from '@/db/schema';
 
-const partners = [
+
+const mockPartners = [
   {
+    id: 1,
     name: "Children's Joy Foundation",
     description: "Bringing smiles to underprivileged children across the state.",
     logoUrl: "https://picsum.photos/200/100?random=1",
     logoHint: "charity logo"
   },
   {
+    id: 2,
     name: "Northwood School District",
     description: "Supporting early childhood education with new learning tools.",
     logoUrl: "https://picsum.photos/200/100?random=2",
     logoHint: "school logo"
   },
   {
+    id: 3,
     name: "Anytown Public Libraries",
     description: "Enriching community spaces with toys for all ages.",
     logoUrl: "https://picsum.photos/200/100?random=3",
     logoHint: "library logo"
   },
   {
+    id: 4,
     name: "Family Support Network",
     description: "Providing resources and support for families in need.",
     logoUrl: "https://picsum.photos/200/100?random=4",
     logoHint: "community logo"
   },
-  {
-    name: "Hope Shelters",
-    description: "Offering comfort and play to children in temporary housing.",
-    logoUrl: "https://picsum.photos/200/100?random=5",
-    logoHint: "shelter logo"
-  },
-  {
-    name: "Bright Futures Initiative",
-    description: "Investing in the next generation through play and education.",
-    logoUrl: "https://picsum.photos/200/100?random=6",
-    logoHint: "education logo"
-  },
 ];
 
-export default function PartnersPage() {
+async function getPartners(): Promise<Partner[]> {
+    if (!process.env.POSTGRES_URL) {
+        // @ts-ignore
+        return mockPartners;
+    }
+    try {
+        return await db.query.partners.findMany();
+    } catch (error) {
+        console.error("Failed to fetch partners:", error);
+        return [];
+    }
+}
+
+
+export default async function PartnersPage() {
+    const partners = await getPartners();
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-8 animate-fade-in">
@@ -53,14 +63,14 @@ export default function PartnersPage() {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {partners.map((partner) => (
-            <Card key={partner.name} className="flex flex-col overflow-hidden transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl">
+            <Card key={partner.id} className="flex flex-col overflow-hidden transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl">
               <div className="bg-muted flex items-center justify-center p-6 h-32">
                 <Image
-                    src={partner.logoUrl}
+                    src={partner.logoUrl || `https://picsum.photos/200/100?random=${partner.id}`}
                     alt={`${partner.name} logo`}
                     width={200}
                     height={100}
-                    data-ai-hint={partner.logoHint}
+                    data-ai-hint={partner.logoHint || 'logo'}
                     className="object-contain h-16 w-auto rounded-md"
                 />
               </div>
