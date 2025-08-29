@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Location } from '@/db/schema';
-import { useFormState } from 'react-dom';
+import { useFormState } from 'react';
 import { createLocation, updateLocation } from '../actions';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
