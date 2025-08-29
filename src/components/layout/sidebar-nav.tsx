@@ -14,6 +14,7 @@ import {
   MapPin,
   Heart,
   Shield,
+  Warehouse,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/locations', label: 'Drop-off Locations', icon: MapPin, roles: ['user', 'admin'] },
   { href: '/partners', label: 'Our Partners', icon: Heart, roles: ['user', 'admin'] },
   { href: '/admin', label: 'Admin Dashboard', icon: Shield, roles: ['admin'] },
+  { href: '/warehouse', label: 'Warehouse', icon: Warehouse, roles: ['admin'] },
 ];
 
 export function SidebarNav() {
