@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -16,6 +16,8 @@ import type { GenerateImpactReportInput } from '@/ai/flows/generate-impact-repor
 import { Loader2, Zap, ToyBrick, Smile, Leaf, Truck, Sparkles, Warehouse, Wrench, Gift } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useAuth } from '@/context/auth-context';
+import { getInventoryCountsByStatus } from './inventory/actions';
+import { InventoryJourney } from './inventory/_components/inventory-journey';
 
 
 const stats = {
@@ -58,6 +60,22 @@ export default function Home() {
   const [report, setReport] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inventoryCounts, setInventoryCounts] = useState<{ status: string, count: number }[]>([]);
+
+  useEffect(() => {
+    async function fetchCounts() {
+        try {
+            const counts = await getInventoryCountsByStatus();
+            setInventoryCounts(counts);
+        } catch (err) {
+            console.error("Failed to fetch inventory counts", err);
+        }
+    }
+    if (user?.role === 'admin') {
+        fetchCounts();
+    }
+  }, [user]);
+
 
   const handleGenerateReport = async () => {
     setIsLoading(true);
@@ -127,6 +145,11 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
+
+        {user?.role === 'admin' && inventoryCounts.length > 0 && (
+          <InventoryJourney counts={inventoryCounts} />
+        )}
+
 
         <Card className="bg-card/80 backdrop-blur-sm">
           <CardHeader>
