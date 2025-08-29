@@ -1,7 +1,9 @@
-import { pgTable, text, serial, varchar, pgEnum, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, serial, varchar, pgEnum, integer, timestamp } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
 export const roleEnum = pgEnum('role', ['admin', 'user']);
+export const inventoryStatusEnum = pgEnum('inventory_status', ['received', 'sanitizing', 'listed', 'redistributed']);
+
 
 export const users = pgTable('users', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -36,6 +38,24 @@ export const toyConditions = pgTable('toy_conditions', {
     name: varchar('name', { length: 256 }).notNull(),
 });
 
+export const inventory = pgTable('inventory', {
+    id: serial('id').primaryKey(),
+    name: varchar('name', { length: 256 }).notNull(),
+    description: text('description'),
+    conditionId: integer('condition_id').references(() => toyConditions.id),
+    status: inventoryStatusEnum('status').notNull().default('received'),
+    receivedAt: timestamp('received_at').defaultNow().notNull(),
+    imageUrl: text('image_url'),
+    imageHint: varchar('image_hint', { length: 256 }),
+});
+
+export const donations = pgTable('donations', {
+    id: serial('id').primaryKey(),
+    userId: text('user_id').references(() => users.id).notNull(),
+    inventoryId: integer('inventory_id').references(() => inventory.id).notNull(),
+    donatedAt: timestamp('donated_at').defaultNow().notNull(),
+});
+
 
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
@@ -51,3 +71,9 @@ export type NewAccessoryType = InferInsertModel<typeof accessoryTypes>;
 
 export type ToyCondition = InferSelectModel<typeof toyConditions>;
 export type NewToyCondition = InferInsertModel<typeof toyConditions>;
+
+export type Inventory = InferSelectModel<typeof inventory>;
+export type NewInventory = InferInsertModel<typeof inventory>;
+
+export type Donation = InferSelectModel<typeof donations>;
+export type NewDonation = InferInsertModel<typeof donations>;
