@@ -1,3 +1,4 @@
+
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
