@@ -6,6 +6,12 @@ import { partners, locations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
+const formActionState = z.object({
+  message: z.string(),
+  error: z.union([z.string(), z.record(z.array(z.string())), z.undefined()]).optional(),
+});
+
+
 // Zod Schemas for validation
 const partnerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -21,11 +27,14 @@ const locationSchema = z.object({
 });
 
 // Partner Actions
-export async function createPartner(formData: FormData) {
+export async function createPartner(prevState: z.infer<typeof formActionState>, formData: FormData) {
   const validatedFields = partnerSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
-    return { error: validatedFields.error.flatten().fieldErrors };
+    return { 
+        message: 'Validation failed',
+        error: validatedFields.error.flatten().fieldErrors 
+    };
   }
 
   try {
@@ -34,15 +43,18 @@ export async function createPartner(formData: FormData) {
     revalidatePath('/partners');
     return { message: 'Partner created successfully.' };
   } catch (error) {
-    return { error: 'Failed to create partner.' };
+    return { message: 'Failed to create partner.', error: 'Failed to create partner.' };
   }
 }
 
-export async function updatePartner(id: number, formData: FormData) {
+export async function updatePartner(id: number, prevState: z.infer<typeof formActionState>, formData: FormData) {
   const validatedFields = partnerSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
-    return { error: validatedFields.error.flatten().fieldErrors };
+    return { 
+        message: 'Validation failed',
+        error: validatedFields.error.flatten().fieldErrors 
+    };
   }
   
   try {
@@ -51,7 +63,7 @@ export async function updatePartner(id: number, formData: FormData) {
     revalidatePath('/partners');
     return { message: 'Partner updated successfully.' };
   } catch (error) {
-    return { error: 'Failed to update partner.' };
+    return { message: 'Failed to update partner.', error: 'Failed to update partner.' };
   }
 }
 
@@ -68,11 +80,14 @@ export async function deletePartner(id: number) {
 
 
 // Location Actions
-export async function createLocation(formData: FormData) {
+export async function createLocation(prevState: z.infer<typeof formActionState>, formData: FormData) {
   const validatedFields = locationSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
-    return { error: validatedFields.error.flatten().fieldErrors };
+    return { 
+        message: 'Validation failed',
+        error: validatedFields.error.flatten().fieldErrors 
+    };
   }
 
   try {
@@ -81,15 +96,18 @@ export async function createLocation(formData: FormData) {
     revalidatePath('/locations');
     return { message: 'Location created successfully.' };
   } catch (error) {
-    return { error: 'Failed to create location.' };
+    return { message: 'Failed to create location.', error: 'Failed to create location.' };
   }
 }
 
-export async function updateLocation(id: number, formData: FormData) {
+export async function updateLocation(id: number, prevState: z.infer<typeof formActionState>, formData: FormData) {
   const validatedFields = locationSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
-    return { error: validatedFields.error.flatten().fieldErrors };
+     return { 
+        message: 'Validation failed',
+        error: validatedFields.error.flatten().fieldErrors 
+    };
   }
 
   try {
@@ -98,7 +116,7 @@ export async function updateLocation(id: number, formData: FormData) {
     revalidatePath('/locations');
     return { message: 'Location updated successfully.' };
   } catch (error) {
-    return { error: 'Failed to update location.' };
+    return { message: 'Failed to update location.', error: 'Failed to update location.' };
   }
 }
 

@@ -36,7 +36,8 @@ export function LocationFormDialog({ isOpen, setIsOpen, location }: LocationForm
   const [state, formAction] = useFormState(action, initialState);
 
   useEffect(() => {
-    if (state.message) {
+    if (!state) return;
+    if (state.message && !state.error) {
       toast({ title: 'Success', description: state.message });
       setIsOpen(false);
     }

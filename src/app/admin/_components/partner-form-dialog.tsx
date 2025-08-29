@@ -17,7 +17,6 @@ import { useFormState } from 'react-dom';
 import { createPartner, updatePartner } from '../actions';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
 import { SubmitButton } from './submit-button';
 
 
@@ -39,7 +38,8 @@ export function PartnerFormDialog({ isOpen, setIsOpen, partner }: PartnerFormDia
   const [state, formAction] = useFormState(action, initialState);
 
   useEffect(() => {
-    if (state.message) {
+    if (!state) return;
+    if (state.message && !state.error) {
       toast({ title: 'Success', description: state.message });
       setIsOpen(false);
     }

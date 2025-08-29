@@ -1,7 +1,6 @@
 
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { db } from '@/db';
 import { Partner, Location } from '@/db/schema';
 import { PartnerList } from './_components/partner-list';
 import { LocationList } from './_components/location-list';
