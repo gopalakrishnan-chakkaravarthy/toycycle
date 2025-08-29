@@ -26,6 +26,11 @@ export const locations = pgTable('locations', {
     hours: varchar('hours', { length: 256 }),
 });
 
+export const accessoryTypes = pgTable('accessory_types', {
+    id: serial('id').primaryKey(),
+    name: varchar('name', { length: 256 }).notNull(),
+});
+
 
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
@@ -35,3 +40,6 @@ export type NewPartner = InferInsertModel<typeof partners>;
 
 export type Location = InferSelectModel<typeof locations>;
 export type NewLocation = InferInsertModel<typeof locations>;
+
+export type AccessoryType = InferSelectModel<typeof accessoryTypes>;
+export type NewAccessoryType = InferInsertModel<typeof accessoryTypes>;

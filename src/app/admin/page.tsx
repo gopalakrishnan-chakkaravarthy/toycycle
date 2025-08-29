@@ -1,28 +1,30 @@
 
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Partner, Location } from '@/db/schema';
+import { Partner, Location, AccessoryType } from '@/db/schema';
 import { PartnerList } from './_components/partner-list';
 import { LocationList } from './_components/location-list';
+import { AccessoryTypeList } from './_components/accessory-type-list';
 
 async function getAdminData() {
     if (!process.env.POSTGRES_URL) {
-         return { partners: [], locations: [] };
+         return { partners: [], locations: [], accessoryTypes: [] };
     }
     try {
         const { db } = await import('@/db');
         const partners = await db.query.partners.findMany();
         const locations = await db.query.locations.findMany();
-        return { partners, locations };
+        const accessoryTypes = await db.query.accessoryTypes.findMany();
+        return { partners, locations, accessoryTypes };
     } catch (error) {
         console.error("Failed to fetch admin data:", error);
-        return { partners: [], locations: [] };
+        return { partners: [], locations: [], accessoryTypes: [] };
     }
 }
 
 
 export default async function AdminPage() {
-    const { partners, locations } = await getAdminData();
+    const { partners, locations, accessoryTypes } = await getAdminData();
     
     return (
         <AppLayout>
@@ -50,6 +52,16 @@ export default async function AdminPage() {
                         </CardHeader>
                         <CardContent>
                            <LocationList locations={locations as Location[]} />
+                        </CardContent>
+                    </Card>
+
+                    <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle>Manage Accessory Types</CardTitle>
+                            <CardDescription>Add, edit, or remove types of kid accessories.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <AccessoryTypeList accessoryTypes={accessoryTypes as AccessoryType[]} />
                         </CardContent>
                     </Card>
                 </div>

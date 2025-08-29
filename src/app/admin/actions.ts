@@ -2,9 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { db as defaultDb } from '@/db';
-import { partners, locations } from '@/db/schema';
+import { partners, locations, accessoryTypes } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { useActionState } from 'react';
 
 const formActionState = z.object({
   message: z.string(),
@@ -24,6 +25,10 @@ const locationSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   address: z.string().min(1, 'Address is required'),
   hours: z.string().optional(),
+});
+
+const accessoryTypeSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
 });
 
 async function getDb() {
@@ -143,5 +148,57 @@ export async function deleteLocation(id: number) {
     return { message: 'Location deleted successfully.' };
   } catch (error) {
     return { error: 'Failed to delete location.' };
+  }
+}
+
+// Accessory Type Actions
+export async function createAccessoryType(prevState: z.infer<typeof formActionState>, formData: FormData) {
+  const validatedFields = accessoryTypeSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!validatedFields.success) {
+    return { 
+        message: 'Validation failed',
+        error: validatedFields.error.flatten().fieldErrors 
+    };
+  }
+
+  try {
+    const db = await getDb();
+    await db.insert(accessoryTypes).values(validatedFields.data);
+    revalidatePath('/admin');
+    return { message: 'Accessory type created successfully.' };
+  } catch (error) {
+    return { message: 'Failed to create accessory type.', error: 'Failed to create accessory type.' };
+  }
+}
+
+export async function updateAccessoryType(id: number, prevState: z.infer<typeof formActionState>, formData: FormData) {
+  const validatedFields = accessoryTypeSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!validatedFields.success) {
+     return { 
+        message: 'Validation failed',
+        error: validatedFields.error.flatten().fieldErrors 
+    };
+  }
+
+  try {
+    const db = await getDb();
+    await db.update(accessoryTypes).set(validatedFields.data).where(eq(accessoryTypes.id, id));
+    revalidatePath('/admin');
+    return { message: 'Accessory type updated successfully.' };
+  } catch (error) {
+    return { message: 'Failed to update accessory type.', error: 'Failed to update accessory type.' };
+  }
+}
+
+export async function deleteAccessoryType(id: number) {
+  try {
+    const db = await getDb();
+    await db.delete(accessoryTypes).where(eq(accessoryTypes.id, id));
+    revalidatePath('/admin');
+    return { message: 'Accessory type deleted successfully.' };
+  } catch (error) {
+    return { error: 'Failed to delete accessory type.' };
   }
 }
