@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { generateImpactReport } from '@/ai/flows/generate-impact-report';
 import type { GenerateImpactReportInput } from '@/ai/flows/generate-impact-report';
-import { Loader2, Zap, ToyBrick, Smile, Leaf } from 'lucide-react';
+import { Loader2, Zap, ToyBrick, Smile, Leaf, Truck, Sparkles, Warehouse, Wrench, Gift } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useAuth } from '@/context/auth-context';
 
@@ -24,6 +24,34 @@ const stats = {
   smilesCreated: 10000,
   userDonations: 5,
 };
+
+const workflowSteps = [
+    {
+        icon: <Truck className="h-10 w-10 text-primary" />,
+        title: 'Collection',
+        description: 'Toys are collected from generous donors through scheduled pickups and drop-off locations.'
+    },
+    {
+        icon: <Sparkles className="h-10 w-10 text-primary" />,
+        title: 'Sanitization',
+        description: 'Every toy is thoroughly cleaned and sanitized to ensure it is safe and hygienic for the next child.'
+    },
+    {
+        icon: <Warehouse className="h-10 w-10 text-primary" />,
+        title: 'Warehouse',
+        description: 'Cleaned toys are sorted and cataloged in our warehouse, ready for the next step.'
+    },
+    {
+        icon: <Wrench className="h-10 w-10 text-primary" />,
+        title: 'Refurbishing',
+        description: 'Our team lovingly repairs and refurbishes toys that need a little extra care.'
+    },
+    {
+        icon: <Gift className="h-10 w-10 text-primary" />,
+        title: 'Ready for Reuse',
+        description: 'Toys are redistributed to our partner organizations to bring joy to new families.'
+    }
+]
 
 export default function Home() {
   const { user } = useAuth();
@@ -128,6 +156,24 @@ export default function Home() {
             </Button>
           </CardFooter>
         </Card>
+
+        <section className="space-y-6">
+             <div className="text-center">
+                <h2 className="text-2xl font-bold tracking-tight font-headline">How It Works</h2>
+                <p className="text-muted-foreground">The journey of a toy from one child to the next.</p>
+            </div>
+             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+                {workflowSteps.map((step, index) => (
+                    <Card key={index} className="text-center flex flex-col items-center p-6 transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl">
+                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+                           {step.icon}
+                       </div>
+                       <h3 className="text-lg font-semibold">{step.title}</h3>
+                       <p className="text-sm text-muted-foreground mt-2 flex-grow">{step.description}</p>
+                    </Card>
+                ))}
+            </div>
+        </section>
       </div>
     </AppLayout>
   );
