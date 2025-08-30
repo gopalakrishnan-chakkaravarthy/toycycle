@@ -41,7 +41,7 @@ async function getLocations(): Promise<Location[]> {
     }
 
     try {
-        const { db } from await import('@/db');
+        const { db } = await import('@/db');
         const locations = await db.query.locations.findMany();
         // If there are no locations in the DB, return the mock data.
         if (locations.length === 0) {
