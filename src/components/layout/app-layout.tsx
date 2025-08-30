@@ -1,9 +1,7 @@
 
 'use client';
 
-import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -13,25 +11,27 @@ import {
   SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import { SidebarNav } from './sidebar-nav';
-import { LogOut, ToyBrick, UserCircle } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Skeleton } from '../ui/skeleton';
+import { ToyBrick, UserCircle } from 'lucide-react';
+import { useClerk, useUser } from '@clerk/nextjs';
+import { UserButton } from "@clerk/nextjs";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace('/login');
-    }
-  }, [isLoading, isAuthenticated, router]);
-
-  if (isLoading || !isAuthenticated) {
+  if (!isLoaded) {
     return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <ToyBrick className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+     router.replace('/sign-in');
+     return (
         <div className="flex h-screen w-screen items-center justify-center">
             <ToyBrick className="h-12 w-12 animate-spin text-primary" />
         </div>
@@ -53,18 +53,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <div className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm">
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src={user?.avatar} />
-                            <AvatarFallback><UserCircle /></AvatarFallback>
-                        </Avatar>
+                    <div className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm">
+                        <UserButton afterSignOutUrl="/sign-in" />
                         <div className="flex flex-col truncate">
-                            <span className="font-semibold">{user?.name}</span>
-                            <span className="text-xs text-muted-foreground">{user?.email}</span>
+                            <span className="font-semibold">{user?.fullName}</span>
+                            <span className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</span>
                         </div>
-                         <SidebarMenuButton onClick={logout} tooltip={{children: 'Logout', side:'right'}} className="ml-auto !size-8 !p-2" variant="ghost">
-                            <LogOut />
-                         </SidebarMenuButton>
                     </div>
                 </SidebarMenuItem>
             </SidebarMenu>

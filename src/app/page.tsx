@@ -15,8 +15,8 @@ import { generateImpactReport } from '@/ai/flows/generate-impact-report';
 import type { GenerateImpactReportInput } from '@/ai/flows/generate-impact-report';
 import { Loader2, Zap, ToyBrick, Smile, Leaf, Truck, Sparkles, Warehouse, Wrench, Gift } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useAuth } from '@/context/auth-context';
 import InventoryPage from './inventory/page';
+import { useUser } from '@clerk/nextjs';
 
 
 const stats = {
@@ -55,7 +55,7 @@ const workflowSteps = [
 ]
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [report, setReport] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export default function Home() {
     const input: GenerateImpactReportInput = {
       userId: user.id,
       ...stats,
-      userDonations: user.role === 'user' ? stats.userDonations : undefined,
+      userDonations: user.publicMetadata?.role === 'user' ? stats.userDonations : undefined,
     };
 
     try {
@@ -129,7 +129,7 @@ export default function Home() {
           </Card>
         </div>
 
-        {user?.role === 'admin' && <InventoryPage />}
+        {user?.publicMetadata?.role === 'admin' && <InventoryPage />}
 
         <Card className="bg-card/80 backdrop-blur-sm">
           <CardHeader>

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/context/auth-context';
+import { useUser } from '@clerk/nextjs';
 
 const navItems = [
   { href: '/', label: 'Impact Report', icon: LayoutDashboard, roles: ['user', 'admin'] },
@@ -36,9 +36,10 @@ const navItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user } = useUser();
+  const userRole = user?.publicMetadata?.role || 'user';
 
-  const filteredNavItems = navItems.filter(item => user && item.roles.includes(user.role));
+  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole as string));
 
   return (
     <SidebarContent>
