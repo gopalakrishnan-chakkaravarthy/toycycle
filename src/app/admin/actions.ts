@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { partners, locations, accessoryTypes, toyConditions } from '@/db/schema';
+import { partners, locations, accessoryTypes, toyConditions, campaigns } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -32,6 +32,13 @@ const accessoryTypeSchema = z.object({
 const toyConditionSchema = z.object({
   name: z.string().min(1, 'Name is required'),
 });
+
+const campaignSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  endDate: z.string().min(1, 'End date is required'),
+});
+
 
 async function getDb() {
     if (!process.env.POSTGRES_URL) {
@@ -254,5 +261,63 @@ export async function deleteToyCondition(id: number) {
     return { message: 'Toy condition deleted successfully.' };
   } catch (error) {
     return { error: 'Failed to delete toy condition.' };
+  }
+}
+
+// Campaign Actions
+export async function createCampaign(prevState: z.infer<typeof formActionState>, formData: FormData) {
+  const validatedFields = campaignSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!validatedFields.success) {
+    return { 
+        message: 'Validation failed',
+        error: validatedFields.error.flatten().fieldErrors 
+    };
+  }
+
+  try {
+    const db = await getDb();
+    await db.insert(campaigns).values({
+      ...validatedFields.data,
+      endDate: new Date(validatedFields.data.endDate),
+    });
+    revalidatePath('/admin/campaigns');
+    return { message: 'Campaign created successfully.' };
+  } catch (error) {
+    return { message: 'Failed to create campaign.', error: 'Failed to create campaign.' };
+  }
+}
+
+export async function updateCampaign(id: number, prevState: z.infer<typeof formActionState>, formData: FormData) {
+  const validatedFields = campaignSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!validatedFields.success) {
+     return { 
+        message: 'Validation failed',
+        error: validatedFields.error.flatten().fieldErrors 
+    };
+  }
+  
+  try {
+    const db = await getDb();
+    await db.update(campaigns).set({
+      ...validatedFields.data,
+      endDate: new Date(validatedFields.data.endDate),
+    }).where(eq(campaigns.id, id));
+    revalidatePath('/admin/campaigns');
+    return { message: 'Campaign updated successfully.' };
+  } catch (error) {
+    return { message: 'Failed to update campaign.', error: 'Failed to update campaign.' };
+  }
+}
+
+export async function deleteCampaign(id: number) {
+  try {
+    const db = await getDb();
+    await db.delete(campaigns).where(eq(campaigns.id, id));
+    revalidatePath('/admin/campaigns');
+    return { message: 'Campaign deleted successfully.' };
+  } catch (error) {
+    return { error: 'Failed to delete campaign.' };
   }
 }

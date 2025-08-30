@@ -57,6 +57,14 @@ export const donations = pgTable('donations', {
     donatedAt: timestamp('donated_at').defaultNow().notNull(),
 });
 
+export const campaigns = pgTable('campaigns', {
+    id: serial('id').primaryKey(),
+    name: varchar('name', { length: 256 }).notNull(),
+    description: text('description'),
+    endDate: timestamp('end_date').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
@@ -78,3 +86,6 @@ export type NewInventory = InferInsertModel<typeof inventory>;
 
 export type Donation = InferSelectModel<typeof donations>;
 export type NewDonation = InferInsertModel<typeof donations>;
+
+export type Campaign = InferSelectModel<typeof campaigns>;
+export type NewCampaign = InferInsertModel<typeof campaigns>;
