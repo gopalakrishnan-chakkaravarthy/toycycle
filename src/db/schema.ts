@@ -47,6 +47,7 @@ export const inventory = pgTable('inventory', {
     receivedAt: timestamp('received_at').defaultNow().notNull(),
     imageUrl: text('image_url'),
     imageHint: varchar('image_hint', { length: 256 }),
+    locationId: integer('location_id').references(() => locations.id),
 });
 
 export const donations = pgTable('donations', {
