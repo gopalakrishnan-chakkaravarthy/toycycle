@@ -24,7 +24,7 @@ const navItems = [
   { href: '/', label: 'Impact Report', icon: LayoutDashboard, roles: ['user', 'admin'] },
   { href: '/donations', label: 'My Donations', icon: Gift, roles: ['user', 'admin'] },
   { href: '/schedule', label: 'Schedule Pickup', icon: CalendarClock, roles: ['user', 'admin'] },
-  { href: '/locations', label: 'Drop-off Locations', icon: MapPin, roles: ['user', 'admin'] },
+  { href: '/locations', label: 'Community Drop-off Points', icon: MapPin, roles: ['user', 'admin'] },
   { href: '/partners', label: 'Our Partners', icon: Heart, roles: ['user', 'admin'] },
   { href: '/admin', label: 'Admin Dashboard', icon: Shield, roles: ['admin'] },
   { href: '/warehouse', label: 'Warehouse', icon: Warehouse, roles: ['admin'] },

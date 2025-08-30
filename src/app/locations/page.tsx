@@ -1,3 +1,4 @@
+
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Clock } from 'lucide-react';
@@ -40,7 +41,7 @@ async function getLocations(): Promise<Location[]> {
     }
 
     try {
-        const { db } = await import('@/db');
+        const { db } from await import('@/db');
         const locations = await db.query.locations.findMany();
         // If there are no locations in the DB, return the mock data.
         if (locations.length === 0) {
@@ -63,7 +64,7 @@ export default async function LocationsPage() {
     <AppLayout>
       <div className="flex flex-col gap-8 animate-fade-in">
         <header className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight font-headline">Drop-off Locations</h1>
+          <h1 className="text-3xl font-bold tracking-tight font-headline">Community Drop-off Points</h1>
           <p className="text-muted-foreground">Find a convenient spot to drop off your toy donations.</p>
         </header>
 
