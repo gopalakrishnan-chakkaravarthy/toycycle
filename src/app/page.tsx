@@ -13,12 +13,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { generateImpactReport } from '@/ai/flows/generate-impact-report';
 import type { GenerateImpactReportInput } from '@/ai/flows/generate-impact-report';
-import { Loader2, Zap, ToyBrick, Smile, Leaf, Truck, Sparkles, Warehouse, Wrench, Gift, MapPin } from 'lucide-react';
+import { Loader2, Zap, ToyBrick, Smile, Leaf, Truck, Sparkles, Warehouse, Wrench, Gift } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useAuth } from '@/context/auth-context';
-import { getInventoryCountsByStatus, getDonationsByLocation } from './inventory/actions';
-import { InventoryJourney } from './inventory/_components/inventory-journey';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import InventoryPage from './inventory/page';
 
 
 const stats = {
@@ -61,26 +59,7 @@ export default function Home() {
   const [report, setReport] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [inventoryCounts, setInventoryCounts] = useState<{ status: string, count: number }[]>([]);
-  const [donationsByLocation, setDonationsByLocation] = useState<{ name: string, count: number }[]>([]);
-
-  useEffect(() => {
-    async function fetchDashboardData() {
-        try {
-            const counts = await getInventoryCountsByStatus();
-            setInventoryCounts(counts);
-            const locationDonations = await getDonationsByLocation();
-            setDonationsByLocation(locationDonations);
-        } catch (err) {
-            console.error("Failed to fetch dashboard data", err);
-        }
-    }
-    if (user?.role === 'admin') {
-        fetchDashboardData();
-    }
-  }, [user]);
-
-
+  
   const handleGenerateReport = async () => {
     setIsLoading(true);
     setError(null);
@@ -150,38 +129,7 @@ export default function Home() {
           </Card>
         </div>
 
-        {user?.role === 'admin' && inventoryCounts.length > 0 && (
-          <InventoryJourney counts={inventoryCounts} />
-        )}
-        
-        {user?.role === 'admin' && donationsByLocation.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="text-primary"/>
-                Donations by Location
-              </CardTitle>
-              <CardDescription>Toys collected from each community drop-off point.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={donationsByLocation} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} interval={0} />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip
-                      cursor={{ fill: 'hsl(var(--muted))' }}
-                      contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
-                    />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" name="Toys Collected" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
+        {user?.role === 'admin' && <InventoryPage />}
 
         <Card className="bg-card/80 backdrop-blur-sm">
           <CardHeader>
