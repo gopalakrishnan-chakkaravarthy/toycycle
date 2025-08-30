@@ -5,7 +5,7 @@ import { z } from 'zod';
 import sgMail from '@sendgrid/mail';
 import { format, startOfDay } from 'date-fns';
 import { db } from '@/db';
-import { AccessoryType, Location, Partner, ToyCondition, pickups } from '@/db/schema';
+import { AccessoryType, Location, Partner, Pickup, ToyCondition, pickups } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 const schedulePickupSchema = z.object({
@@ -106,9 +106,35 @@ export async function getScheduledDays() {
     }
     try {
         const result = await db.selectDistinct({ date: pickups.pickupDate }).from(pickups);
-        return result.map(r => r.date);
+        return result.map(r => new Date(r.date));
     } catch (error) {
         console.error("Failed to fetch scheduled days:", error);
+        return [];
+    }
+}
+
+export type DetailedPickup = Pickup & {
+  location: Location | null;
+  partner: Partner | null;
+}
+
+export async function getPickupsForDate(date: Date): Promise<DetailedPickup[]> {
+    if (!process.env.POSTGRES_URL) {
+        // @ts-ignore
+        return [];
+    }
+     try {
+        const result = await db.query.pickups.findMany({
+            where: eq(pickups.pickupDate, format(date, 'yyyy-MM-dd')),
+            with: {
+                location: true,
+                partner: true,
+            },
+            orderBy: (pickups, { asc }) => [asc(pickups.timeSlot)],
+        });
+        return result as DetailedPickup[];
+    } catch (error) {
+        console.error("Failed to fetch pickups for date:", error);
         return [];
     }
 }
