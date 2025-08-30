@@ -24,7 +24,7 @@ import { useUser } from '@clerk/nextjs';
 
 const navItems = [
   { href: '/', label: 'Impact Report', icon: LayoutDashboard, roles: ['user', 'admin'] },
-  { href: '/donations', label: 'My Donations', icon: Gift, roles: ['user', 'admin'] },
+  { href: '/donations', label: 'My Donations', icon: Gift, roles: ['user'] },
   { href: '/schedule', label: 'Schedule Pickup', icon: CalendarClock, roles: ['user', 'admin'] },
   { href: '/locations', label: 'Community Drop-off Points', icon: MapPin, roles: ['user', 'admin'] },
   { href: '/partners', label: 'Our Partners', icon: Heart, roles: ['user', 'admin'] },
@@ -37,9 +37,14 @@ const navItems = [
 export function SidebarNav() {
   const pathname = usePathname();
   const { user } = useUser();
-  const userRole = user?.publicMetadata?.role || 'user';
+  const userRole = user?.publicMetadata?.role as string ?? 'user';
 
-  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole as string));
+  const filteredNavItems = navItems.filter(item => {
+    if (item.label === 'My Donations' && userRole === 'admin') {
+      return false;
+    }
+    return item.roles.includes(userRole);
+  });
 
   return (
     <SidebarContent>
