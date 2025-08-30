@@ -1,39 +1,32 @@
 
-'use client';
-
-import { useRouter } from 'next/navigation';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarTrigger,
-  SidebarInset,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-} from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarTrigger, SidebarInset, SidebarFooter, SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SidebarNav } from './sidebar-nav';
-import { ToyBrick, UserCircle } from 'lucide-react';
-import { useClerk, useUser } from '@clerk/nextjs';
-import { UserButton } from "@clerk/nextjs";
+import { ToyBrick } from 'lucide-react';
+import { UserButton, auth } from "@clerk/nextjs/server";
+import { Suspense } from 'react';
+import { Skeleton } from '../ui/skeleton';
+
+function UserInfo() {
+    const { user } = auth();
+    return (
+         <div className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm">
+            <UserButton afterSignOutUrl="/sign-in" />
+            <div className="flex flex-col truncate">
+                <span className="font-semibold">{user?.fullName}</span>
+                <span className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</span>
+            </div>
+        </div>
+    )
+}
+
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const router = useRouter();
-
-  if (!isLoaded) {
+  const { userId } = auth();
+  
+  if (!userId) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <ToyBrick className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!isSignedIn) {
-     router.replace('/sign-in');
-     return (
         <div className="flex h-screen w-screen items-center justify-center">
-            <ToyBrick className="h-12 w-12 animate-spin text-primary" />
+            <p>Redirecting...</p>
         </div>
     );
   }
@@ -53,13 +46,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <div className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm">
-                        <UserButton afterSignOutUrl="/sign-in" />
-                        <div className="flex flex-col truncate">
-                            <span className="font-semibold">{user?.fullName}</span>
-                            <span className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</span>
-                        </div>
-                    </div>
+                    <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+                        <UserInfo />
+                    </Suspense>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarFooter>

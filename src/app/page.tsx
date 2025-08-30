@@ -1,10 +1,10 @@
 
+
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from '@/components/ui/card';
 import { ToyBrick, Smile, Leaf, Truck, Sparkles, Warehouse, Wrench, Gift, MapPin } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -117,7 +117,6 @@ export default async function Home() {
                         <MapPin className="text-primary"/>
                         Donations by Location
                     </CardTitle>
-                    <CardDescription>Toys collected from each community drop-off point.</CardDescription>
                     </CardHeader>
                     <CardContent>
                     <div className="h-[300px]">
