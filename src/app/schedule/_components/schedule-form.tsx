@@ -5,9 +5,11 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { CalendarIcon, Loader2, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
-import { useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { AccessoryType, ToyCondition } from '@/db/schema';
+import { schedulePickup } from '../actions';
+import { useAuth } from '@/context/auth-context';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,9 +29,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { SubmitButton } from '@/app/admin/_components/submit-button';
 
 const scheduleFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
+  email: z.string().email('Please enter a valid email.'),
   address: z.string().min(10, 'Please enter a valid address.'),
   pickupDate: z.date({
     required_error: 'A pickup date is required.',
@@ -37,10 +41,10 @@ const scheduleFormSchema = z.object({
   timeSlot: z.string({
     required_error: 'Please select a time slot.',
   }),
-  toyCondition: z.string({
+  toyConditionId: z.string({
     required_error: 'Please select a toy condition.',
   }),
-  accessoryType: z.string({
+  accessoryTypeId: z.string({
     required_error: 'Please select an accessory type.',
   }),
   notes: z.string().optional(),
@@ -53,59 +57,87 @@ interface ScheduleFormProps {
     accessoryTypes: AccessoryType[];
 }
 
-export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+const initialState = {
+  message: '',
+  error: undefined as string | Record<string, string[] | undefined> | undefined,
+};
 
+
+export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProps) {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [state, formAction] = useActionState(schedulePickup, initialState);
+  
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleFormSchema),
     defaultValues: {
       address: '',
-      name: '',
+      name: user?.name ?? '',
+      email: user?.email ?? '',
       notes: '',
     }
   });
 
-  async function onSubmit(data: ScheduleFormValues) {
-    setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
+  useEffect(() => {
+    if (!state) return;
+    if (state.message && !state.error) {
+       const pickupDate = form.getValues('pickupDate');
+       const timeSlot = form.getValues('timeSlot');
+       toast({
+        title: "Pickup Scheduled!",
+        description: `We'll see you on ${format(pickupDate, 'PPP')} between ${timeSlot}.`,
+      });
+      form.reset({ name: user?.name ?? '', email: user?.email ?? '', address: '', notes: '' });
+    }
+    if (typeof state.error === 'string') {
+        toast({ variant: 'destructive', title: 'Error', description: state.error });
+    }
+  }, [state, toast, form, user]);
 
-    toast({
-      title: "Pickup Scheduled!",
-      description: `We'll see you on ${format(data.pickupDate, 'PPP')} between ${data.timeSlot}.`,
-    });
-
-    form.reset({ name: '', address: '', notes: '' });
-  }
   
   const addressValue = form.watch('address');
+  const fieldErrors = typeof state.error === 'object' ? state.error : {};
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <Card>
       <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form action={formAction}>
           <CardHeader>
               <CardTitle>Pickup Details</CardTitle>
               <CardDescription>Fill out the form below to schedule your donation pickup.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                      <Input placeholder="Jane Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-              />
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Jane Doe" {...field} />
+                        </FormControl>
+                        {fieldErrors?.name && <p className="text-destructive text-sm">{fieldErrors.name[0]}</p>}
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="jane.doe@example.com" {...field} />
+                        </FormControl>
+                        {fieldErrors?.email && <p className="text-destructive text-sm">{fieldErrors.email[0]}</p>}
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              </div>
               <FormField
                   control={form.control}
                   name="address"
@@ -113,13 +145,13 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                   <FormItem>
                       <FormLabel>Pickup Address</FormLabel>
                       <FormControl>
-                      <Input placeholder="123 Main St, Anytown, USA" {...field} />
+                        <Input placeholder="123 Main St, Anytown, USA" {...field} />
                       </FormControl>
+                      {fieldErrors?.address && <p className="text-destructive text-sm">{fieldErrors.address[0]}</p>}
                       <FormMessage />
                   </FormItem>
                   )}
               />
-              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <FormField
                       control={form.control}
@@ -130,16 +162,20 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                           <Popover>
                           <PopoverTrigger asChild>
                               <FormControl>
-                              <Button
-                                  variant={'outline'}
-                                  className={cn(
-                                  'w-full pl-3 text-left font-normal',
-                                  !field.value && 'text-muted-foreground'
-                                  )}
-                              >
-                                  {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
+                                <>
+                                <input type="hidden" {...field} />
+                                <Button
+                                    name="pickupDateBtn"
+                                    variant={'outline'}
+                                    className={cn(
+                                    'w-full pl-3 text-left font-normal',
+                                    !field.value && 'text-muted-foreground'
+                                    )}
+                                >
+                                    {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                                </>
                               </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
@@ -152,6 +188,7 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                               />
                           </PopoverContent>
                           </Popover>
+                          {fieldErrors?.pickupDate && <p className="text-destructive text-sm">{fieldErrors.pickupDate[0]}</p>}
                           <FormMessage />
                       </FormItem>
                       )}
@@ -164,9 +201,12 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                           <FormLabel>Time Slot</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                              <SelectTrigger>
-                              <SelectValue placeholder="Select a time slot" />
+                            <>
+                              <input type="hidden" {...field} />
+                              <SelectTrigger name="timeSlotBtn">
+                                <SelectValue placeholder="Select a time slot" />
                               </SelectTrigger>
+                            </>
                           </FormControl>
                           <SelectContent>
                               <SelectItem value="9am - 12pm">9:00 AM - 12:00 PM</SelectItem>
@@ -174,6 +214,7 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                               <SelectItem value="3pm - 6pm">3:00 PM - 6:00 PM</SelectItem>
                           </SelectContent>
                           </Select>
+                          {fieldErrors?.timeSlot && <p className="text-destructive text-sm">{fieldErrors.timeSlot[0]}</p>}
                           <FormMessage />
                       </FormItem>
                       )}
@@ -182,15 +223,18 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="toyCondition"
+                    name="toyConditionId"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Toy Condition</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select condition" />
-                            </SelectTrigger>
+                             <>
+                              <input type="hidden" {...field} />
+                              <SelectTrigger name="toyConditionIdBtn">
+                                <SelectValue placeholder="Select condition" />
+                              </SelectTrigger>
+                            </>
                           </FormControl>
                           <SelectContent>
                             {toyConditions.map(condition => (
@@ -198,21 +242,25 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                             ))}
                           </SelectContent>
                         </Select>
+                        {fieldErrors?.toyConditionId && <p className="text-destructive text-sm">{fieldErrors.toyConditionId[0]}</p>}
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                    <FormField
                     control={form.control}
-                    name="accessoryType"
+                    name="accessoryTypeId"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Accessory Type</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
+                             <>
+                              <input type="hidden" {...field} />
+                              <SelectTrigger name="accessoryTypeIdBtn">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                            </>
                           </FormControl>
                           <SelectContent>
                              {accessoryTypes.map(type => (
@@ -220,6 +268,7 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                             ))}
                           </SelectContent>
                         </Select>
+                        {fieldErrors?.accessoryTypeId && <p className="text-destructive text-sm">{fieldErrors.accessoryTypeId[0]}</p>}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -242,6 +291,7 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                       <FormDescription>
                           Any special instructions for our pickup team.
                       </FormDescription>
+                      {fieldErrors?.notes && <p className="text-destructive text-sm">{fieldErrors.notes[0]}</p>}
                       <FormMessage />
                       </FormItem>
                   )}
@@ -249,10 +299,7 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
               </div>
           </CardContent>
           <CardFooter>
-              <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Schedule Pickup
-              </Button>
+              <SubmitButton>Schedule Pickup</SubmitButton>
           </CardFooter>
           </form>
       </Form>
