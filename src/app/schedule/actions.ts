@@ -1,9 +1,11 @@
+
 'use server';
 
 import { z } from 'zod';
 import sgMail from '@sendgrid/mail';
 import { format } from 'date-fns';
 import { db } from '@/db';
+import { AccessoryType, Location, Partner, ToyCondition } from '@/db/schema';
 
 const schedulePickupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -42,6 +44,60 @@ const formActionState = z.object({
   message: z.string(),
   error: z.union([z.string(), z.record(z.array(z.string())), z.undefined()]).optional(),
 });
+
+const mockToyConditions = [
+    { id: 1, name: 'New' },
+    { id: 2, name: 'Gently Used' },
+    { id: 3, name: 'Play-worn' },
+];
+
+const mockAccessoryTypes = [
+    { id: 1, name: 'Stroller' },
+    { id: 2, name: 'Car Seat' },
+    { id: 3, name: 'High Chair' },
+];
+
+const mockLocations = [
+  { id: 1, name: "Northwood Community Center", address: "4500 Northwood Ave", hours: "" },
+  { id: 2, name: "Southside Public Library", address: "876 Library Ln", hours: "" },
+];
+
+const mockPartners = [
+  { id: 1, name: "Children's Joy Foundation", description: "", logoUrl: "", logoHint: "" },
+  { id: 2, name: "Northwood School District", description: "", logoUrl: "", logoHint: "" },
+];
+
+export async function getScheduleData() {
+    if (!process.env.POSTGRES_URL) {
+        return {
+            toyConditions: mockToyConditions as ToyCondition[],
+            accessoryTypes: mockAccessoryTypes as AccessoryType[],
+            locations: mockLocations as Location[],
+            partners: mockPartners as Partner[],
+        };
+    }
+    try {
+        const toyConditions = await db.query.toyConditions.findMany();
+        const accessoryTypes = await db.query.accessoryTypes.findMany();
+        const locations = await db.query.locations.findMany();
+        const partners = await db.query.partners.findMany();
+
+        return { 
+            toyConditions: toyConditions.length > 0 ? toyConditions : mockToyConditions, 
+            accessoryTypes: accessoryTypes.length > 0 ? accessoryTypes : mockAccessoryTypes,
+            locations: locations.length > 0 ? locations : mockLocations,
+            partners: partners.length > 0 ? partners: mockPartners
+        };
+    } catch (error) {
+        console.error("Failed to fetch schedule data:", error);
+        return { 
+            toyConditions: mockToyConditions as ToyCondition[], 
+            accessoryTypes: mockAccessoryTypes as AccessoryType[],
+            locations: mockLocations as Location[],
+            partners: mockPartners as Partner[]
+        };
+    }
+}
 
 
 export async function schedulePickup(prevState: z.infer<typeof formActionState>, formData: FormData) {

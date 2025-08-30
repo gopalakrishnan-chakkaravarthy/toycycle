@@ -7,61 +7,7 @@ import { AccessoryType, Location, Partner, ToyCondition } from '@/db/schema';
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
-
-const mockToyConditions = [
-    { id: 1, name: 'New' },
-    { id: 2, name: 'Gently Used' },
-    { id: 3, name: 'Play-worn' },
-];
-
-const mockAccessoryTypes = [
-    { id: 1, name: 'Stroller' },
-    { id: 2, name: 'Car Seat' },
-    { id: 3, name: 'High Chair' },
-];
-
-const mockLocations = [
-  { id: 1, name: "Northwood Community Center", address: "4500 Northwood Ave", hours: "" },
-  { id: 2, name: "Southside Public Library", address: "876 Library Ln", hours: "" },
-];
-
-const mockPartners = [
-  { id: 1, name: "Children's Joy Foundation", description: "", logoUrl: "", logoHint: "" },
-  { id: 2, name: "Northwood School District", description: "", logoUrl: "", logoHint: "" },
-];
-
-async function getScheduleData() {
-    if (!process.env.POSTGRES_URL) {
-        return {
-            toyConditions: mockToyConditions as ToyCondition[],
-            accessoryTypes: mockAccessoryTypes as AccessoryType[],
-            locations: mockLocations as Location[],
-            partners: mockPartners as Partner[],
-        };
-    }
-    try {
-        const { db } = await import('@/db');
-        const toyConditions = await db.query.toyConditions.findMany();
-        const accessoryTypes = await db.query.accessoryTypes.findMany();
-        const locations = await db.query.locations.findMany();
-        const partners = await db.query.partners.findMany();
-
-        return { 
-            toyConditions: toyConditions.length > 0 ? toyConditions : mockToyConditions, 
-            accessoryTypes: accessoryTypes.length > 0 ? accessoryTypes : mockAccessoryTypes,
-            locations: locations.length > 0 ? locations : mockLocations,
-            partners: partners.length > 0 ? partners: mockPartners
-        };
-    } catch (error) {
-        console.error("Failed to fetch schedule data:", error);
-        return { 
-            toyConditions: mockToyConditions as ToyCondition[], 
-            accessoryTypes: mockAccessoryTypes as AccessoryType[],
-            locations: mockLocations as Location[],
-            partners: mockPartners as Partner[]
-        };
-    }
-}
+import { getScheduleData } from './actions';
 
 
 export default function SchedulePage() {
