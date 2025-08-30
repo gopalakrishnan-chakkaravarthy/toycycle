@@ -7,7 +7,7 @@ import { CalendarIcon, Loader2, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { useActionState, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { AccessoryType, ToyCondition } from '@/db/schema';
+import { AccessoryType, Location, Partner, ToyCondition } from '@/db/schema';
 import { schedulePickup } from '../actions';
 import { useAuth } from '@/context/auth-context';
 
@@ -30,11 +30,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { SubmitButton } from '@/app/admin/_components/submit-button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const scheduleFormSchema = z.object({
+  pickupType: z.enum(['my-address', 'drop-off', 'partner']),
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Please enter a valid email.'),
-  address: z.string().min(10, 'Please enter a valid address.'),
+  address: z.string().optional(),
+  locationId: z.string().optional(),
+  partnerId: z.string().optional(),
   pickupDate: z.date({
     required_error: 'A pickup date is required.',
   }),
@@ -48,13 +52,34 @@ const scheduleFormSchema = z.object({
     required_error: 'Please select an accessory type.',
   }),
   notes: z.string().optional(),
+}).refine(data => {
+    if (data.pickupType === 'my-address') return !!data.address && data.address.length >= 10;
+    return true;
+}, {
+    message: 'Please enter a valid address.',
+    path: ['address'],
+}).refine(data => {
+    if (data.pickupType === 'drop-off') return !!data.locationId;
+    return true;
+}, {
+    message: 'Please select a drop-off location.',
+    path: ['locationId'],
+}).refine(data => {
+    if (data.pickupType === 'partner') return !!data.partnerId;
+    return true;
+}, {
+    message: 'Please select a partner.',
+    path: ['partnerId'],
 });
+
 
 type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
 
 interface ScheduleFormProps {
     toyConditions: ToyCondition[];
     accessoryTypes: AccessoryType[];
+    locations: Location[];
+    partners: Partner[];
 }
 
 const initialState = {
@@ -63,7 +88,7 @@ const initialState = {
 };
 
 
-export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProps) {
+export function ScheduleForm({ toyConditions, accessoryTypes, locations, partners }: ScheduleFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [state, formAction] = useActionState(schedulePickup, initialState);
@@ -71,12 +96,17 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleFormSchema),
     defaultValues: {
+      pickupType: 'my-address',
       address: '',
       name: user?.name ?? '',
       email: user?.email ?? '',
       notes: '',
     }
   });
+  
+  const pickupType = form.watch('pickupType');
+  const locationId = form.watch('locationId');
+  const partnerId = form.watch('partnerId');
 
   useEffect(() => {
     if (!state) return;
@@ -87,7 +117,7 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
         title: "Pickup Scheduled!",
         description: `We'll see you on ${format(pickupDate, 'PPP')} between ${timeSlot}.`,
       });
-      form.reset({ name: user?.name ?? '', email: user?.email ?? '', address: '', notes: '' });
+      form.reset({ name: user?.name ?? '', email: user?.email ?? '', address: '', notes: '', pickupType: 'my-address' });
     }
     if (typeof state.error === 'string') {
         toast({ variant: 'destructive', title: 'Error', description: state.error });
@@ -97,6 +127,20 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
   
   const addressValue = form.watch('address');
   const fieldErrors = typeof state.error === 'object' ? state.error : {};
+  
+  const getMapAddress = () => {
+    if (pickupType === 'my-address') {
+      return addressValue || "Enter an address to see it here.";
+    }
+    if (pickupType === 'drop-off' && locationId) {
+      return locations.find(l => String(l.id) === locationId)?.address ?? 'Please select a location.';
+    }
+    if (pickupType === 'partner' && partnerId) {
+       return `Pickup from ${partners.find(p => String(p.id) === partnerId)?.name ?? 'partner'}`;
+    }
+    return "Enter pickup details to see the location here.";
+  };
+
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
@@ -108,6 +152,43 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
               <CardDescription>Fill out the form below to schedule your donation pickup.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
+            <FormField
+              control={form.control}
+              name="pickupType"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Select Pickup Source</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                    >
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="my-address" />
+                        </FormControl>
+                        <FormLabel className="font-normal">My Address</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="drop-off" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Community Drop-off</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="partner" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Partner Org</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <FormField
                     control={form.control}
@@ -138,20 +219,71 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                     )}
                 />
               </div>
-              <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Pickup Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="123 Main St, Anytown, USA" {...field} />
-                      </FormControl>
-                      {fieldErrors?.address && <p className="text-destructive text-sm">{fieldErrors.address[0]}</p>}
-                      <FormMessage />
-                  </FormItem>
-                  )}
-              />
+
+              {pickupType === 'my-address' && (
+                <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Pickup Address</FormLabel>
+                        <FormControl>
+                          <Input placeholder="123 Main St, Anytown, USA" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              )}
+              {pickupType === 'drop-off' && (
+                 <FormField
+                    control={form.control}
+                    name="locationId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Community Drop-off Point</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a location" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {locations.map(loc => (
+                              <SelectItem key={loc.id} value={String(loc.id)}>{loc.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              )}
+               {pickupType === 'partner' && (
+                 <FormField
+                    control={form.control}
+                    name="partnerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Partner Organization</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a partner" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {partners.map(p => (
+                              <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <FormField
                       control={form.control}
@@ -162,8 +294,6 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                           <Popover>
                           <PopoverTrigger asChild>
                               <FormControl>
-                                <>
-                                <input type="hidden" {...field} />
                                 <Button
                                     name="pickupDateBtn"
                                     variant={'outline'}
@@ -175,7 +305,6 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                                     {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button>
-                                </>
                               </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
@@ -188,7 +317,6 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                               />
                           </PopoverContent>
                           </Popover>
-                          {fieldErrors?.pickupDate && <p className="text-destructive text-sm">{fieldErrors.pickupDate[0]}</p>}
                           <FormMessage />
                       </FormItem>
                       )}
@@ -201,12 +329,9 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                           <FormLabel>Time Slot</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <>
-                              <input type="hidden" {...field} />
                               <SelectTrigger name="timeSlotBtn">
                                 <SelectValue placeholder="Select a time slot" />
                               </SelectTrigger>
-                            </>
                           </FormControl>
                           <SelectContent>
                               <SelectItem value="9am - 12pm">9:00 AM - 12:00 PM</SelectItem>
@@ -214,7 +339,6 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                               <SelectItem value="3pm - 6pm">3:00 PM - 6:00 PM</SelectItem>
                           </SelectContent>
                           </Select>
-                          {fieldErrors?.timeSlot && <p className="text-destructive text-sm">{fieldErrors.timeSlot[0]}</p>}
                           <FormMessage />
                       </FormItem>
                       )}
@@ -229,12 +353,9 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                         <FormLabel>Toy Condition</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                             <>
-                              <input type="hidden" {...field} />
                               <SelectTrigger name="toyConditionIdBtn">
                                 <SelectValue placeholder="Select condition" />
                               </SelectTrigger>
-                            </>
                           </FormControl>
                           <SelectContent>
                             {toyConditions.map(condition => (
@@ -242,7 +363,6 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                             ))}
                           </SelectContent>
                         </Select>
-                        {fieldErrors?.toyConditionId && <p className="text-destructive text-sm">{fieldErrors.toyConditionId[0]}</p>}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -255,12 +375,9 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                         <FormLabel>Accessory Type</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                             <>
-                              <input type="hidden" {...field} />
                               <SelectTrigger name="accessoryTypeIdBtn">
                                 <SelectValue placeholder="Select type" />
                               </SelectTrigger>
-                            </>
                           </FormControl>
                           <SelectContent>
                              {accessoryTypes.map(type => (
@@ -268,7 +385,6 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                             ))}
                           </SelectContent>
                         </Select>
-                        {fieldErrors?.accessoryTypeId && <p className="text-destructive text-sm">{fieldErrors.accessoryTypeId[0]}</p>}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -291,7 +407,6 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                       <FormDescription>
                           Any special instructions for our pickup team.
                       </FormDescription>
-                      {fieldErrors?.notes && <p className="text-destructive text-sm">{fieldErrors.notes[0]}</p>}
                       <FormMessage />
                       </FormItem>
                   )}
@@ -323,9 +438,9 @@ export function ScheduleForm({ toyConditions, accessoryTypes }: ScheduleFormProp
                 <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
                   <MapPin className="h-5 w-5 mt-1 shrink-0 text-primary" />
                   <div className="flex-grow">
-                      <p className="font-semibold">Your Address</p>
+                      <p className="font-semibold">Pickup Location</p>
                       <p className="text-sm text-muted-foreground min-h-10">
-                          {addressValue || "Enter an address to see it here."}
+                          {getMapAddress()}
                       </p>
                   </div>
               </div>

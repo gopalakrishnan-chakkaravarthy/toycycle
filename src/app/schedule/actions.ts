@@ -3,17 +3,40 @@
 import { z } from 'zod';
 import sgMail from '@sendgrid/mail';
 import { format } from 'date-fns';
+import { db } from '@/db';
 
 const schedulePickupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Please enter a valid email.'),
-  address: z.string().min(10, 'Please enter a valid address.'),
+  pickupType: z.enum(['my-address', 'drop-off', 'partner']),
+  address: z.string().optional(),
+  locationId: z.string().optional(),
+  partnerId: z.string().optional(),
   pickupDate: z.string().min(1, "A pickup date is required."),
   timeSlot: z.string().min(1, 'Please select a time slot.'),
   toyConditionId: z.string().min(1, 'Please select a toy condition.'),
   accessoryTypeId: z.string().min(1, 'Please select an accessory type.'),
   notes: z.string().optional(),
+}).refine(data => {
+    if (data.pickupType === 'my-address') return !!data.address && data.address.length >= 10;
+    return true;
+}, {
+    message: 'Please enter a valid address.',
+    path: ['address'],
+}).refine(data => {
+    if (data.pickupType === 'drop-off') return !!data.locationId;
+    return true;
+}, {
+    message: 'Please select a drop-off location.',
+    path: ['locationId'],
+}).refine(data => {
+    if (data.pickupType === 'partner') return !!data.partnerId;
+    return true;
+}, {
+    message: 'Please select a partner.',
+    path: ['partnerId'],
 });
+
 
 const formActionState = z.object({
   message: z.string(),
@@ -25,7 +48,10 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
   const validatedFields = schedulePickupSchema.safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
+    pickupType: formData.get('pickupType'),
     address: formData.get('address'),
+    locationId: formData.get('locationId'),
+    partnerId: formData.get('partnerId'),
     pickupDate: formData.get('pickupDate'),
     timeSlot: formData.get('timeSlot'),
     toyConditionId: formData.get('toyConditionId'),
@@ -34,6 +60,7 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
   });
 
   if (!validatedFields.success) {
+    console.log(validatedFields.error.flatten().fieldErrors);
     return {
       message: 'Validation failed',
       error: validatedFields.error.flatten().fieldErrors,
@@ -46,7 +73,19 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
   if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-    const { name, email, address, pickupDate, timeSlot, notes } = validatedFields.data;
+    const { name, email, pickupDate, timeSlot, notes, pickupType, address, locationId, partnerId } = validatedFields.data;
+    
+    let pickupLocationDetails = '';
+
+    if (pickupType === 'my-address') {
+      pickupLocationDetails = `<li><strong>Address:</strong> ${address}</li>`;
+    } else if (pickupType === 'drop-off' && locationId && process.env.POSTGRES_URL) {
+      const location = await db.query.locations.findFirst({ where: (l, {eq}) => eq(l.id, parseInt(locationId)) });
+      pickupLocationDetails = `<li><strong>Drop-off Location:</strong> ${location?.name} - ${location?.address}</li>`;
+    } else if (pickupType === 'partner' && partnerId && process.env.POSTGRES_URL) {
+      const partner = await db.query.partners.findFirst({ where: (p, {eq}) => eq(p.id, parseInt(partnerId)) });
+      pickupLocationDetails = `<li><strong>Partner Location:</strong> ${partner?.name}</li>`;
+    }
     
     const formattedDate = format(new Date(pickupDate), 'PPPP');
 
@@ -61,7 +100,7 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
         <ul>
           <li><strong>Date:</strong> ${formattedDate}</li>
           <li><strong>Time Slot:</strong> ${timeSlot}</li>
-          <li><strong>Address:</strong> ${address}</li>
+          ${pickupLocationDetails}
           ${notes ? `<li><strong>Notes:</strong> ${notes}</li>` : ''}
         </ul>
         <p>Our team will see you then. Thanks for helping us turn unused toys into smiles!</p>
