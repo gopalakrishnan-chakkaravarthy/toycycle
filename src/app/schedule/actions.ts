@@ -3,9 +3,10 @@
 
 import { z } from 'zod';
 import sgMail from '@sendgrid/mail';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { db } from '@/db';
-import { AccessoryType, Location, Partner, ToyCondition } from '@/db/schema';
+import { AccessoryType, Location, Partner, ToyCondition, pickups } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 const schedulePickupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -99,6 +100,19 @@ export async function getScheduleData() {
     }
 }
 
+export async function getScheduledDays() {
+    if (!process.env.POSTGRES_URL) {
+        return [];
+    }
+    try {
+        const result = await db.selectDistinct({ date: pickups.pickupDate }).from(pickups);
+        return result.map(r => r.date);
+    } catch (error) {
+        console.error("Failed to fetch scheduled days:", error);
+        return [];
+    }
+}
+
 
 export async function schedulePickup(prevState: z.infer<typeof formActionState>, formData: FormData) {
   const validatedFields = schedulePickupSchema.safeParse({
@@ -123,9 +137,28 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
     };
   }
 
-  // In a real app, you would save this data to your database.
-  // For now, we will just simulate success and send an email.
+  // Save to database if configured
+  if (process.env.POSTGRES_URL) {
+    try {
+        await db.insert(pickups).values({
+            ...validatedFields.data,
+            pickupDate: startOfDay(new Date(validatedFields.data.pickupDate)),
+            locationId: validatedFields.data.locationId ? parseInt(validatedFields.data.locationId) : null,
+            partnerId: validatedFields.data.partnerId ? parseInt(validatedFields.data.partnerId) : null,
+            toyConditionId: parseInt(validatedFields.data.toyConditionId),
+            accessoryTypeId: parseInt(validatedFields.data.accessoryTypeId),
+        });
+    } catch (dbError) {
+        console.error("Database Error:", dbError);
+        return {
+            message: 'Failed to schedule pickup.',
+            error: 'Could not save the appointment to the database. Please try again later.',
+        };
+    }
+  }
 
+
+  // Send confirmation email if configured
   if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 

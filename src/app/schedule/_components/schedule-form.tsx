@@ -85,6 +85,7 @@ type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
 interface ScheduleFormProps {
     isOpen: boolean;
     setIsOpen: (isOpen: boolean) => void;
+    onSuccess: (date: Date) => void;
     selectedDate: Date | undefined;
     toyConditions: ToyCondition[];
     accessoryTypes: AccessoryType[];
@@ -98,7 +99,7 @@ const initialState = {
 };
 
 
-export function ScheduleForm({ isOpen, setIsOpen, selectedDate, toyConditions, accessoryTypes, locations, partners }: ScheduleFormProps) {
+export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyConditions, accessoryTypes, locations, partners }: ScheduleFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [state, formAction] = useActionState(schedulePickup, initialState);
@@ -133,12 +134,12 @@ export function ScheduleForm({ isOpen, setIsOpen, selectedDate, toyConditions, a
         description: `We'll see you on ${format(pickupDate, 'PPP')} between ${timeSlot}.`,
       });
       form.reset({ name: user?.name ?? '', email: user?.email ?? '', address: '', notes: '', pickupType: 'my-address' });
-      setIsOpen(false);
+      onSuccess(pickupDate);
     }
     if (typeof state.error === 'string') {
         toast({ variant: 'destructive', title: 'Error', description: state.error });
     }
-  }, [state, toast, form, user, setIsOpen]);
+  }, [state, toast, form, user, onSuccess]);
 
   const fieldErrors = typeof state.error === 'object' ? state.error : {};
 

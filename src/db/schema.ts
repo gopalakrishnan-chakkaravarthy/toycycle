@@ -1,8 +1,9 @@
-import { pgTable, text, serial, varchar, pgEnum, integer, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, serial, varchar, pgEnum, integer, timestamp, date } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
 export const roleEnum = pgEnum('role', ['admin', 'user']);
 export const inventoryStatusEnum = pgEnum('inventory_status', ['received', 'sanitizing', 'listed', 'redistributed']);
+export const pickupTypeEnum = pgEnum('pickup_type', ['my-address', 'drop-off', 'partner']);
 
 
 export const users = pgTable('users', {
@@ -65,6 +66,22 @@ export const campaigns = pgTable('campaigns', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const pickups = pgTable('pickups', {
+    id: serial('id').primaryKey(),
+    pickupDate: date('pickup_date').notNull(),
+    timeSlot: varchar('time_slot', { length: 256 }).notNull(),
+    name: varchar('name', { length: 256 }).notNull(),
+    email: varchar('email', { length: 256 }).notNull(),
+    pickupType: pickupTypeEnum('pickup_type').notNull(),
+    address: text('address'),
+    locationId: integer('location_id').references(() => locations.id),
+    partnerId: integer('partner_id').references(() => partners.id),
+    toyConditionId: integer('toy_condition_id').references(() => toyConditions.id).notNull(),
+    accessoryTypeId: integer('accessory_type_id').references(() => accessoryTypes.id).notNull(),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
@@ -89,3 +106,6 @@ export type NewDonation = InferInsertModel<typeof donations>;
 
 export type Campaign = InferSelectModel<typeof campaigns>;
 export type NewCampaign = InferInsertModel<typeof campaigns>;
+
+export type Pickup = InferSelectModel<typeof pickups>;
+export type NewPickup = InferInsertModel<typeof pickups>;

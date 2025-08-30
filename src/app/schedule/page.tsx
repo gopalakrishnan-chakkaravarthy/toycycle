@@ -7,7 +7,7 @@ import { AccessoryType, Location, Partner, ToyCondition } from '@/db/schema';
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
-import { getScheduleData } from './actions';
+import { getScheduleData, getScheduledDays } from './actions';
 
 
 export default function SchedulePage() {
@@ -18,13 +18,18 @@ export default function SchedulePage() {
     partners: Partner[];
   } | null>(null);
 
+  const [scheduledDays, setScheduledDays] = useState<Date[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
-        const scheduleData = await getScheduleData();
+        const [scheduleData, scheduledDaysData] = await Promise.all([
+          getScheduleData(),
+          getScheduledDays()
+        ]);
         setData(scheduleData);
+        setScheduledDays(scheduledDaysData);
     }
     loadData();
   }, [])
@@ -34,6 +39,11 @@ export default function SchedulePage() {
     if (date) {
         setIsModalOpen(true);
     }
+  }
+
+  const handleFormSuccess = (newPickupDate: Date) => {
+    setScheduledDays(prev => [...prev, newPickupDate]);
+    setIsModalOpen(false);
   }
 
   return (
@@ -52,6 +62,10 @@ export default function SchedulePage() {
                     onSelect={handleDateSelect}
                     className="rounded-md"
                     disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                    modifiers={{ scheduled: scheduledDays }}
+                    modifiersClassNames={{
+                        scheduled: 'font-bold text-primary',
+                    }}
                 />
             </CardContent>
         </Card>
@@ -60,6 +74,7 @@ export default function SchedulePage() {
             <ScheduleForm 
               isOpen={isModalOpen}
               setIsOpen={setIsModalOpen}
+              onSuccess={handleFormSuccess}
               selectedDate={selectedDate}
               toyConditions={data.toyConditions} 
               accessoryTypes={data.accessoryTypes}
