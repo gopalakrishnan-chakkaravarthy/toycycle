@@ -1,32 +1,58 @@
+'use client';
 
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarTrigger, SidebarInset, SidebarFooter, SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SidebarNav } from './sidebar-nav';
-import { ToyBrick } from 'lucide-react';
-import { UserButton, auth } from "@clerk/nextjs/server";
-import { Suspense } from 'react';
-import { Skeleton } from '../ui/skeleton';
+import { LogOut, ToyBrick, User as UserIcon } from 'lucide-react';
+import { useAuth, User } from '@/context/auth-context';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Button } from '../ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
-function UserInfo() {
-    const { user } = auth();
+
+function UserNav({ user, onLogout }: { user: User, onLogout: () => void }) {
     return (
-         <div className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm">
-            <UserButton afterSignOutUrl="/sign-in" />
-            <div className="flex flex-col truncate">
-                <span className="font-semibold">{user?.fullName}</span>
-                <span className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</span>
-            </div>
-        </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-full justify-start p-2 text-left">
+                     <Avatar className="h-8 w-8 mr-2">
+                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarFallback>
+                            <UserIcon />
+                        </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col truncate">
+                        <span className="font-semibold text-sm">{user.name}</span>
+                        <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </div>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                    {user.email}
+                    </p>
+                </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
     )
 }
 
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { userId } = auth();
+  const { user, logout, isLoading } = useAuth();
   
-  if (!userId) {
+  if (isLoading || !user) {
     return (
         <div className="flex h-screen w-screen items-center justify-center">
-            <p>Redirecting...</p>
+            <p>Loading...</p>
         </div>
     );
   }
@@ -46,9 +72,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <Suspense fallback={<Skeleton className="h-10 w-full" />}>
-                        <UserInfo />
-                    </Suspense>
+                   <UserNav user={user} onLogout={logout} />
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarFooter>

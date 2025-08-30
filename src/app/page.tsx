@@ -1,4 +1,4 @@
-
+'use client';
 
 import {
   Card,
@@ -8,11 +8,12 @@ import {
 } from '@/components/ui/card';
 import { ToyBrick, Smile, Leaf, Truck, Sparkles, Warehouse, Wrench, Gift, MapPin } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { auth } from '@clerk/nextjs/server';
 import { getInventoryCountsByStatus, getDonationsByLocation } from './inventory/actions';
 import { InventoryJourney } from './inventory/_components/inventory-journey';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ImpactReportGenerator } from './_components/impact-report-generator';
+import { useAuth } from '@/context/auth-context';
+import { useEffect, useState } from 'react';
 
 
 const stats = {
@@ -50,18 +51,25 @@ const workflowSteps = [
     }
 ]
 
-export default async function Home() {
-  const { sessionClaims } = auth();
-  const userRole = sessionClaims?.metadata?.role || 'user';
-  
-  let adminData = null;
-  if (userRole === 'admin') {
-      const [inventoryCounts, donationsByLocation] = await Promise.all([
+export default function Home() {
+  const { user } = useAuth();
+  const [adminData, setAdminData] = useState<{
+      inventoryCounts: { status: string; count: number }[];
+      donationsByLocation: { name: string; count: number }[];
+  } | null>(null);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      const fetchData = async () => {
+        const [inventoryCounts, donationsByLocation] = await Promise.all([
           getInventoryCountsByStatus(),
           getDonationsByLocation()
         ]);
-      adminData = { inventoryCounts, donationsByLocation };
-  }
+        setAdminData({ inventoryCounts, donationsByLocation });
+      };
+      fetchData();
+    }
+  }, [user]);
 
   return (
     <AppLayout>
@@ -104,7 +112,7 @@ export default async function Home() {
           </Card>
         </div>
 
-        {userRole === 'admin' && adminData && (
+        {user?.role === 'admin' && adminData && (
           <div className="flex flex-col gap-8">
             {adminData.inventoryCounts.length > 0 && (
                 <InventoryJourney counts={adminData.inventoryCounts} />
@@ -139,10 +147,7 @@ export default async function Home() {
         </div>
         )}
 
-        <ImpactReportGenerator 
-            stats={stats} 
-            isUser={userRole === 'user'} 
-        />
+        <ImpactReportGenerator stats={stats} />
 
         <section className="space-y-6">
              <div className="text-center">

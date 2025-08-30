@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -20,7 +19,7 @@ import {
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useUser } from '@clerk/nextjs';
+import { useAuth } from '@/context/auth-context';
 
 const navItems = [
   { href: '/', label: 'Impact Report', icon: LayoutDashboard, roles: ['user', 'admin'] },
@@ -36,14 +35,15 @@ const navItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { user } = useUser();
-  const userRole = user?.publicMetadata?.role as string ?? 'user';
+  const { user } = useAuth();
 
   const filteredNavItems = navItems.filter(item => {
-    if (item.label === 'My Donations' && userRole === 'admin') {
+    if (!user) return false;
+    // Hide "My Donations" for admins
+    if (item.label === 'My Donations' && user.role === 'admin') {
       return false;
     }
-    return item.roles.includes(userRole);
+    return item.roles.includes(user.role);
   });
 
   return (

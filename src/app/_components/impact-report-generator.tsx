@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -14,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { generateImpactReport } from '@/ai/flows/generate-impact-report';
 import type { GenerateImpactReportInput } from '@/ai/flows/generate-impact-report';
 import { Loader2, Zap } from 'lucide-react';
-import { useUser } from '@clerk/nextjs';
+import { useAuth } from '@/context/auth-context';
 
 interface ImpactReportGeneratorProps {
     stats: {
@@ -23,11 +22,10 @@ interface ImpactReportGeneratorProps {
         smilesCreated: number;
         userDonations: number;
     };
-    isUser: boolean;
 }
 
-export function ImpactReportGenerator({ stats, isUser }: ImpactReportGeneratorProps) {
-  const { user } = useUser();
+export function ImpactReportGenerator({ stats }: ImpactReportGeneratorProps) {
+  const { user } = useAuth();
   const [report, setReport] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +44,7 @@ export function ImpactReportGenerator({ stats, isUser }: ImpactReportGeneratorPr
     const input: GenerateImpactReportInput = {
       userId: user.id,
       ...stats,
-      userDonations: isUser ? stats.userDonations : undefined,
+      userDonations: user.role === 'user' ? stats.userDonations : undefined,
     };
 
     try {

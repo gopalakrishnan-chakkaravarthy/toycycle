@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,7 +9,6 @@ import { useActionState, useEffect } from 'react';
 import Image from 'next/image';
 import { AccessoryType, Location, Partner, ToyCondition } from '@/db/schema';
 import { schedulePickup } from '../actions';
-import { useUser } from '@clerk/nextjs';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SubmitButton } from '@/app/admin/_components/submit-button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/context/auth-context';
 
 const scheduleFormSchema = z.object({
   pickupType: z.enum(['my-address', 'drop-off', 'partner']),
@@ -100,7 +99,7 @@ const initialState = {
 
 export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyConditions, accessoryTypes, locations, partners }: ScheduleFormProps) {
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user } = useAuth();
   const [state, formAction] = useActionState(schedulePickup, initialState);
   
   const form = useForm<ScheduleFormValues>({
@@ -108,8 +107,8 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
     defaultValues: {
       pickupType: 'my-address',
       address: '',
-      name: user?.fullName ?? '',
-      email: user?.primaryEmailAddress?.emailAddress ?? '',
+      name: user?.name ?? '',
+      email: user?.email ?? '',
       notes: '',
       pickupDate: selectedDate,
     }
@@ -132,7 +131,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
         title: "Pickup Scheduled!",
         description: `We'll see you on ${format(pickupDate, 'PPP')} between ${timeSlot}.`,
       });
-      form.reset({ name: user?.fullName ?? '', email: user?.primaryEmailAddress?.emailAddress ?? '', address: '', notes: '', pickupType: 'my-address' });
+      form.reset({ name: user?.name ?? '', email: user?.email ?? '', address: '', notes: '', pickupType: 'my-address' });
       onSuccess(pickupDate);
     }
     if (typeof state.error === 'string') {
