@@ -1,24 +1,18 @@
 
-'use client';
-
-import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { generateImpactReport } from '@/ai/flows/generate-impact-report';
-import type { GenerateImpactReportInput } from '@/ai/flows/generate-impact-report';
-import { Loader2, Zap, ToyBrick, Smile, Leaf, Truck, Sparkles, Warehouse, Wrench, Gift, MapPin } from 'lucide-react';
+import { ToyBrick, Smile, Leaf, Truck, Sparkles, Warehouse, Wrench, Gift, MapPin } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import { getInventoryCountsByStatus, getDonationsByLocation } from './inventory/actions';
 import { InventoryJourney } from './inventory/_components/inventory-journey';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ImpactReportGenerator } from './_components/impact-report-generator';
 
 
 const stats = {
@@ -56,58 +50,18 @@ const workflowSteps = [
     }
 ]
 
-type AdminDashboardData = {
-    inventoryCounts: { status: string; count: number }[];
-    donationsByLocation: { name: string, count: number }[];
-}
-
-export default function Home() {
-  const { user } = useUser();
-  const [report, setReport] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [adminData, setAdminData] = useState<AdminDashboardData | null>(null);
-
-  useEffect(() => {
-    if (user?.publicMetadata?.role === 'admin') {
-      const fetchAdminData = async () => {
-        const [inventoryCounts, donationsByLocation] = await Promise.all([
+export default async function Home() {
+  const { sessionClaims } = auth();
+  const userRole = sessionClaims?.metadata?.role || 'user';
+  
+  let adminData = null;
+  if (userRole === 'admin') {
+      const [inventoryCounts, donationsByLocation] = await Promise.all([
           getInventoryCountsByStatus(),
           getDonationsByLocation()
         ]);
-        setAdminData({ inventoryCounts, donationsByLocation });
-      };
-      fetchAdminData();
-    }
-  }, [user]);
-  
-  const handleGenerateReport = async () => {
-    setIsLoading(true);
-    setError(null);
-    setReport(null);
-
-    if (!user) {
-        setError('You must be logged in to generate a report.');
-        setIsLoading(false);
-        return;
-    }
-
-    const input: GenerateImpactReportInput = {
-      userId: user.id,
-      ...stats,
-      userDonations: user.publicMetadata?.role === 'user' ? stats.userDonations : undefined,
-    };
-
-    try {
-      const result = await generateImpactReport(input);
-      setReport(result.impactReport);
-    } catch (e) {
-      setError('Failed to generate report. Please try again later.');
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      adminData = { inventoryCounts, donationsByLocation };
+  }
 
   return (
     <AppLayout>
@@ -150,7 +104,7 @@ export default function Home() {
           </Card>
         </div>
 
-        {user?.publicMetadata?.role === 'admin' && adminData && (
+        {userRole === 'admin' && adminData && (
           <div className="flex flex-col gap-8">
             {adminData.inventoryCounts.length > 0 && (
                 <InventoryJourney counts={adminData.inventoryCounts} />
@@ -186,34 +140,10 @@ export default function Home() {
         </div>
         )}
 
-        <Card className="bg-card/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="text-primary"/>
-              Personalized Impact Report
-            </CardTitle>
-            <CardDescription>Get a unique summary of your contribution, powered by AI.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 min-h-[120px] flex items-center justify-center">
-            {isLoading ? (
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            ) : error ? (
-                <p className="text-destructive text-center">{error}</p>
-            ) : report ? (
-              <blockquote className="rounded-lg border-l-4 border-primary bg-muted/50 p-4 text-base italic text-foreground">
-                "{report}"
-              </blockquote>
-            ) : (
-              <div className="text-center text-muted-foreground p-4">Click the button to generate your report!</div>
-            )}
-          </CardContent>
-          <CardFooter>
-             <Button onClick={handleGenerateReport} disabled={isLoading} className="w-full sm:w-auto transition-all hover:shadow-lg hover:scale-105">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                Generate My Report
-            </Button>
-          </CardFooter>
-        </Card>
+        <ImpactReportGenerator 
+            stats={stats} 
+            isUser={userRole === 'user'} 
+        />
 
         <section className="space-y-6">
              <div className="text-center">
