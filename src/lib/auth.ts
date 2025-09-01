@@ -1,7 +1,9 @@
+
 'use server';
 
 import { eq } from 'drizzle-orm';
 import type { NewUser } from '@/db/schema';
+import { cookies } from 'next/headers';
 
 // Define a common User interface
 export interface User {
@@ -10,6 +12,18 @@ export interface User {
   email: string;
   role: 'admin' | 'user';
   avatar?: string;
+}
+
+export async function getCurrentUser(): Promise<User | null> {
+    const userCookie = cookies().get('toycycle-user');
+    if (userCookie) {
+        try {
+            return JSON.parse(userCookie.value);
+        } catch (e) {
+            return null;
+        }
+    }
+    return null;
 }
 
 // DB-based login function
@@ -22,13 +36,15 @@ const dbLogin = async (email: string): Promise<User> => {
     });
 
     if (existingUser) {
-        return {
+        const user = {
             id: existingUser.id,
             name: existingUser.name,
             email: existingUser.email,
             role: existingUser.role as 'admin' | 'user',
             avatar: existingUser.avatar || undefined,
         };
+        cookies().set('toycycle-user', JSON.stringify(user), { httpOnly: true, path: '/' });
+        return user;
     }
     
     throw new Error('User not found. Please sign up.');
@@ -61,40 +77,46 @@ const dbRegister = async (name: string, email: string): Promise<User> => {
 
     const insertedUsers = await db.insert(users).values(newUser).returning();
     const insertedUser = insertedUsers[0];
-
-    return {
+    
+    const user = {
         id: insertedUser.id,
         name: insertedUser.name,
         email: insertedUser.email,
         role: insertedUser.role as 'admin' | 'user',
         avatar: insertedUser.avatar || undefined,
     };
+    cookies().set('toycycle-user', JSON.stringify(user), { httpOnly: true, path: '/' });
+    return user;
 };
 
 
 // Mock login function for when there is no DB
 const mockAuthLogin = async (email: string): Promise<User> => {
     const isAdmin = email === 'admin@toycycle.com';
-    return {
+    const user = {
         id: `mock-${email}`,
         name: isAdmin ? 'Admin' : email.split('@')[0],
         email: email,
         role: isAdmin ? 'admin' : 'user',
         avatar: `https://i.pravatar.cc/150?u=${email}`,
     };
+    cookies().set('toycycle-user', JSON.stringify(user), { httpOnly: true, path: '/' });
+    return user;
 };
 
 const mockAuthRegister = async (name: string, email: string): Promise<User> => {
     if (email === 'admin@toycycle.com') {
         throw new Error('Cannot register with admin email.');
     }
-    return {
+    const user = {
         id: `mock-${email}`,
         name,
         email,
         role: 'user',
         avatar: `https://i.pravatar.cc/150?u=${email}`,
     };
+    cookies().set('toycycle-user', JSON.stringify(user), { httpOnly: true, path: '/' });
+    return user;
 };
 
 
@@ -115,4 +137,8 @@ export const registerUser = async (name: string, email: string, pass: string): P
         // In a real app, you'd hash the password here.
         return mockAuthRegister(name, email);
     }
+}
+
+export const logout = async () => {
+    cookies().delete('toycycle-user');
 }

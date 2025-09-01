@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { login as apiLogin, User } from '@/lib/auth';
+import { login as apiLogin, User, logout as apiLogout, getCurrentUser } from '@/lib/auth';
 import { usePathname, useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -21,22 +22,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('toycycle-user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    const fetchUser = async () => {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+        setIsLoading(false);
     }
-    setIsLoading(false);
-  }, []);
+    fetchUser();
+  }, [pathname]);
 
   const login = async (email: string, pass: string) => {
     const loggedInUser = await apiLogin(email, pass);
     setUser(loggedInUser);
-    localStorage.setItem('toycycle-user', JSON.stringify(loggedInUser));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await apiLogout();
     setUser(null);
-    localStorage.removeItem('toycycle-user');
     router.push('/login');
   };
   

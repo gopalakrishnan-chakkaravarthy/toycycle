@@ -10,14 +10,9 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PackageCheck, PackageSearch, Truck, User, Calendar } from 'lucide-react';
-
-const donations = [
-  { id: 'DON-00781', date: '2024-05-15T10:00:00Z', status: 'Redistributed', items: 12, amount: 50.00, pickupPerson: 'John D.', icon: <PackageCheck className="h-4 w-4" /> },
-  { id: 'DON-00765', date: '2024-04-22T14:30:00Z', status: 'Processing', items: 8, amount: 35.00, pickupPerson: 'Jane S.', icon: <PackageSearch className="h-4 w-4" /> },
-  { id: 'DON-00753', date: '2024-03-10T09:00:00Z', status: 'Picked Up', items: 5, amount: 25.00, pickupPerson: 'Mike R.', icon: <Truck className="h-4 w-4" /> },
-  { id: 'DON-00741', date: '2024-02-01T11:45:00Z', status: 'Redistributed', items: 25, amount: 120.00, pickupPerson: 'Sarah L.', icon: <PackageCheck className="h-4 w-4" /> },
-];
+import { PackageCheck, PackageSearch, Truck, User, Calendar, Handshake } from 'lucide-react';
+import { getDonationsForUser } from './actions';
+import { DetailedDonation } from './actions';
 
 type Status = 'Redistributed' | 'Processing' | 'Picked Up';
 
@@ -30,17 +25,30 @@ const getStatusVariant = (status: Status) => {
   }
 };
 
+const getStatusIcon = (status: string) => {
+    switch (status) {
+        case 'redistributed': return <PackageCheck className="h-4 w-4" />;
+        case 'sanitizing':
+        case 'listed':
+             return <PackageSearch className="h-4 w-4" />;
+        case 'received': return <Truck className="h-4 w-4" />;
+        default: return <Handshake className="h-4 w-4" />;
+    }
+}
+
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 }
 
-const formatDateTime = (dateString: string) => {
+const formatDateTime = (dateString: string | Date) => {
     const date = new Date(dateString);
     return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
 
 
-export default function DonationsPage() {
+export default async function DonationsPage() {
+  const donations = await getDonationsForUser();
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-8 animate-fade-in">
@@ -58,39 +66,37 @@ export default function DonationsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[150px]">Donation ID</TableHead>
-                  <TableHead>Pickup Details</TableHead>
+                  <TableHead>Donated Item</TableHead>
+                  <TableHead>Donated On</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Items</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Est. Value</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {donations.map((donation) => (
+                {donations.length > 0 ? donations.map((donation: DetailedDonation) => (
                   <TableRow key={donation.id}>
-                    <TableCell className="font-medium">{donation.id}</TableCell>
+                    <TableCell className="font-medium">{donation.inventory?.name}</TableCell>
                     <TableCell>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                           <span>{formatDateTime(donation.date)}</span>
-                        </div>
-                         <div className="flex items-center gap-2 text-muted-foreground">
-                           <User className="h-4 w-4" />
-                           <span className="text-sm">{donation.pickupPerson}</span>
-                        </div>
+                      <div className="flex items-center gap-2">
+                         <Calendar className="h-4 w-4 text-muted-foreground" />
+                         <span>{formatDateTime(donation.donatedAt)}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(donation.status as Status)} className="flex items-center gap-2 w-fit">
-                        {donation.icon}
-                        {donation.status}
+                      <Badge variant={getStatusVariant(donation.inventory?.status as Status)} className="flex items-center gap-2 w-fit capitalize">
+                        {getStatusIcon(donation.inventory?.status || '')}
+                        {donation.inventory?.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-medium">{donation.items}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(donation.amount)}</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(5)}</TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                    <TableRow>
+                        <TableCell colSpan={4} className="text-center h-24">
+                            You haven't made any donations yet.
+                        </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>

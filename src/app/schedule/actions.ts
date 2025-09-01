@@ -6,7 +6,8 @@ import sgMail from '@sendgrid/mail';
 import { format, startOfDay } from 'date-fns';
 import { db } from '@/db';
 import { AccessoryType, Location, Partner, Pickup, ToyCondition, pickups } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import { getCurrentUser } from '@/lib/auth';
 
 const schedulePickupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -119,13 +120,21 @@ export type DetailedPickup = Pickup & {
 }
 
 export async function getPickupsForDate(date: Date): Promise<DetailedPickup[]> {
-    if (!process.env.POSTGRES_URL) {
-        // @ts-ignore
+    const user = await getCurrentUser();
+    if (!user || !process.env.POSTGRES_URL) {
         return [];
     }
      try {
+        const whereClause = user.role === 'admin' 
+            ? eq(pickups.pickupDate, format(date, 'yyyy-MM-dd'))
+            : and(
+                eq(pickups.pickupDate, format(date, 'yyyy-MM-dd')),
+                eq(pickups.name, user.name)
+            );
+
         const result = await db.query.pickups.findMany({
-            where: eq(pickups.pickupDate, format(date, 'yyyy-MM-dd')),
+            // @ts-ignore
+            where: whereClause,
             with: {
                 location: true,
                 partner: true,
