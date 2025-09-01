@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { mockLogin, User } from '@/lib/auth';
+import { login as apiLogin, User } from '@/lib/auth';
 import { usePathname, useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, pass: string) => {
-    const loggedInUser = await mockLogin(email, pass);
+    const loggedInUser = await apiLogin(email, pass);
     setUser(loggedInUser);
     localStorage.setItem('toycycle-user', JSON.stringify(loggedInUser));
   };
@@ -42,9 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const isAuthenticated = !!user;
 
-  // Protect all routes except /login
+  // Protect all routes except /login and /signup
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && pathname !== '/login') {
+    if (!isLoading && !isAuthenticated && pathname !== '/login' && pathname !== '/signup') {
       router.replace('/login');
     }
   }, [isLoading, isAuthenticated, pathname, router]);

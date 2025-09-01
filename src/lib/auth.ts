@@ -14,7 +14,6 @@ export interface User {
 
 // DB-based login function
 const dbLogin = async (email: string): Promise<User> => {
-    // These are dynamically imported so they are only loaded when a DB is configured.
     const { db } = await import('@/db');
     const { users } = await import('@/db/schema');
 
@@ -31,13 +30,30 @@ const dbLogin = async (email: string): Promise<User> => {
             avatar: existingUser.avatar || undefined,
         };
     }
+    
+    throw new Error('User not found. Please sign up.');
+};
 
+
+// DB-based registration function
+const dbRegister = async (name: string, email: string): Promise<User> => {
+    const { db } = await import('@/db');
+    const { users } = await import('@/db/schema');
+
+    const existingUser = await db.query.users.findFirst({
+        where: eq(users.email, email),
+    });
+
+    if (existingUser) {
+        throw new Error('An account with this email already exists.');
+    }
+    
     if (email === 'admin@toycycle.com') {
-        throw new Error('Admin user not found. Please seed the database.');
+        throw new Error('Cannot register with admin email.');
     }
 
     const newUser: NewUser = {
-        name: email.split('@')[0],
+        name,
         email,
         role: 'user',
         avatar: `https://i.pravatar.cc/150?u=${email}`,
@@ -55,6 +71,7 @@ const dbLogin = async (email: string): Promise<User> => {
     };
 };
 
+
 // Mock login function for when there is no DB
 const mockAuthLogin = async (email: string): Promise<User> => {
     const isAdmin = email === 'admin@toycycle.com';
@@ -67,8 +84,22 @@ const mockAuthLogin = async (email: string): Promise<User> => {
     };
 };
 
+const mockAuthRegister = async (name: string, email: string): Promise<User> => {
+    if (email === 'admin@toycycle.com') {
+        throw new Error('Cannot register with admin email.');
+    }
+    return {
+        id: `mock-${email}`,
+        name,
+        email,
+        role: 'user',
+        avatar: `https://i.pravatar.cc/150?u=${email}`,
+    };
+};
+
+
 // The main login function that decides whether to use the DB or mock data.
-export const mockLogin = async (email: string, pass: string): Promise<User> => {
+export const login = async (email: string, pass: string): Promise<User> => {
   if (process.env.POSTGRES_URL) {
     return dbLogin(email);
   } else {
@@ -76,3 +107,12 @@ export const mockLogin = async (email: string, pass: string): Promise<User> => {
     return mockAuthLogin(email);
   }
 };
+
+export const registerUser = async (name: string, email: string, pass: string): Promise<User> => {
+    if (process.env.POSTGRES_URL) {
+        return dbRegister(name, email);
+    } else {
+        // In a real app, you'd hash the password here.
+        return mockAuthRegister(name, email);
+    }
+}
