@@ -23,12 +23,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const fetchUser = async () => {
+        setIsLoading(true);
         const currentUser = await getCurrentUser();
         setUser(currentUser);
         setIsLoading(false);
     }
     fetchUser();
-  }, [pathname]);
+  }, []);
 
   const login = async (email: string, pass: string) => {
     const loggedInUser = await apiLogin(email, pass);
