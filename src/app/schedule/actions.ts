@@ -5,9 +5,10 @@ import { z } from 'zod';
 import sgMail from '@sendgrid/mail';
 import { format, startOfDay } from 'date-fns';
 import { db } from '@/db';
-import { AccessoryType, Location, Partner, Pickup, ToyCondition, pickups } from '@/db/schema';
+import { AccessoryType, Location, Partner, Pickup, ToyCondition, pickups, pickupStatusEnum } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth';
+import { revalidatePath } from 'next/cache';
 
 const schedulePickupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -146,6 +147,53 @@ export async function getPickupsForDate(date: Date): Promise<DetailedPickup[]> {
         console.error("Failed to fetch pickups for date:", error);
         return [];
     }
+}
+
+export async function updatePickupStatus(pickupId: number, status: 'scheduled' | 'completed' | 'cancelled') {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+        return { error: 'You are not authorized to perform this action.' };
+    }
+    if (!process.env.POSTGRES_URL) {
+        return { error: 'Database not configured.' };
+    }
+
+    try {
+        const updatedPickups = await db.update(pickups)
+            .set({ status })
+            .where(eq(pickups.id, pickupId))
+            .returning();
+        
+        const pickup = updatedPickups[0];
+
+        if (status === 'completed' && pickup) {
+             if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
+                sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+                const msg = {
+                    to: pickup.email,
+                    from: process.env.SENDGRID_FROM_EMAIL,
+                    subject: 'Your ToyCycle Pickup is Complete!',
+                    html: `
+                        <h1>Thank you, ${pickup.name}!</h1>
+                        <p>We're writing to let you know that your toy donation pickup has been successfully completed.</p>
+                        <p>Your generosity is already on its way to making a difference. The toys you've donated will soon be cleaned, sorted, and sent to children who will cherish them.</p>
+                        <p>You can track the journey of your donation on your "My Donations" page.</p>
+                        <p>Thank you for being a vital part of the ToyCycle community!</p>
+                        <p>- The ToyCycle Team</p>
+                    `,
+                };
+                await sgMail.send(msg);
+            }
+        }
+
+        revalidatePath('/schedule');
+        return { message: `Pickup status updated to ${status}.` };
+
+    } catch (error) {
+        console.error('Failed to update pickup status:', error);
+        return { error: 'Failed to update pickup status.' };
+    }
+
 }
 
 

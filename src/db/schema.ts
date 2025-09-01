@@ -4,6 +4,7 @@ import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 export const roleEnum = pgEnum('role', ['admin', 'user']);
 export const inventoryStatusEnum = pgEnum('inventory_status', ['received', 'sanitizing', 'listed', 'redistributed']);
 export const pickupTypeEnum = pgEnum('pickup_type', ['my-address', 'drop-off', 'partner']);
+export const pickupStatusEnum = pgEnum('pickup_status', ['scheduled', 'completed', 'cancelled']);
 
 
 export const users = pgTable('users', {
@@ -78,6 +79,7 @@ export const pickups = pgTable('pickups', {
     partnerId: integer('partner_id').references(() => partners.id),
     toyConditionId: integer('toy_condition_id').references(() => toyConditions.id).notNull(),
     accessoryTypeId: integer('accessory_type_id').references(() => accessoryTypes.id).notNull(),
+    status: pickupStatusEnum('status').notNull().default('scheduled'),
     notes: text('notes'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });

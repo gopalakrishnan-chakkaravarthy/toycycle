@@ -4,10 +4,12 @@
 import { DetailedPickup } from '../actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Home, Building, Handshake, MoreHorizontal } from 'lucide-react';
+import { Clock, Home, Building, Handshake, MoreHorizontal, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { updatePickupStatus } from '../actions';
 
 const getPickupTypeIcon = (type: string) => {
     switch (type) {
@@ -27,8 +29,30 @@ const getPickupLocation = (pickup: DetailedPickup) => {
     }
 }
 
+const getStatusVariant = (status: string) => {
+  switch (status) {
+    case 'completed': return 'default';
+    case 'scheduled': return 'secondary';
+    case 'cancelled': return 'destructive';
+    default: return 'outline';
+  }
+}
+
 
 export function PickupList({ pickups }: { pickups: DetailedPickup[] }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleStatusChange = async (pickupId: number, status: 'scheduled' | 'completed' | 'cancelled') => {
+    const result = await updatePickupStatus(pickupId, status);
+    if (result.error) {
+        toast({ variant: 'destructive', title: 'Error', description: result.error });
+    } else {
+        toast({ title: 'Success', description: result.message });
+    }
+  }
+
+
   if (pickups.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-48 text-center bg-muted/50 rounded-lg">
@@ -46,6 +70,7 @@ export function PickupList({ pickups }: { pickups: DetailedPickup[] }) {
             <TableHead>Time Slot</TableHead>
             <TableHead>Contact</TableHead>
             <TableHead>Location</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -74,6 +99,9 @@ export function PickupList({ pickups }: { pickups: DetailedPickup[] }) {
                  </div>
               </TableCell>
               <TableCell>
+                <Badge variant={getStatusVariant(pickup.status)} className="capitalize">{pickup.status}</Badge>
+              </TableCell>
+              <TableCell>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -82,8 +110,23 @@ export function PickupList({ pickups }: { pickups: DetailedPickup[] }) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem disabled>Edit</DropdownMenuItem>
-                        <DropdownMenuItem disabled className="text-destructive">Delete</DropdownMenuItem>
+                         {user?.role === 'admin' && (
+                          <>
+                             <DropdownMenuItem onClick={() => handleStatusChange(pickup.id, 'completed')} disabled={pickup.status === 'completed'}>
+                               <CheckCircle2 className="mr-2 h-4 w-4" />
+                               Mark as Completed
+                             </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleStatusChange(pickup.id, 'cancelled')} disabled={pickup.status === 'cancelled'}>
+                               <XCircle className="mr-2 h-4 w-4" />
+                               Mark as Cancelled
+                             </DropdownMenuItem>
+                             <DropdownMenuSeparator />
+                          </>
+                         )}
+                        <DropdownMenuItem disabled className="text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
