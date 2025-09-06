@@ -2,9 +2,22 @@
 'use server';
 
 import { db } from '@/db';
-import { inventory, logisticsStatusEnum } from '@/db/schema';
-import { eq, isNotNull } from 'drizzle-orm';
+import { inventory, logisticsStatusEnum, ecommerceIntegrations } from '@/db/schema';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+
+const formActionState = z.object({
+  message: z.string(),
+  error: z.union([z.string(), z.record(z.array(z.string())), z.undefined()]).optional(),
+});
+
+
+const ecommerceIntegrationSchema = z.object({
+  platform: z.string().min(1, 'Platform name is required'),
+  apiKey: z.string().min(1, 'API Key is required'),
+  apiSecret: z.string().optional(),
+});
 
 export async function getRedistributedInventory() {
     if (!process.env.POSTGRES_URL) {
@@ -50,4 +63,66 @@ export async function requestRecollection(itemId: number) {
         console.error("Failed to request recollection:", error);
         return { error: 'Failed to request recollection.' };
     }
+}
+
+
+// EcommerceIntegration Actions
+export async function getEcommerceIntegrations() {
+    if (!process.env.POSTGRES_URL) {
+        return [];
+    }
+    try {
+        return await db.query.ecommerceIntegrations.findMany();
+    } catch (error) {
+        console.error("Failed to fetch ecommerce integrations:", error);
+        return [];
+    }
+}
+
+export async function createEcommerceIntegration(prevState: z.infer<typeof formActionState>, formData: FormData) {
+  const validatedFields = ecommerceIntegrationSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!validatedFields.success) {
+    return { 
+        message: 'Validation failed',
+        error: validatedFields.error.flatten().fieldErrors 
+    };
+  }
+
+  try {
+    await db.insert(ecommerceIntegrations).values(validatedFields.data);
+    revalidatePath('/admin/logistics');
+    return { message: 'Integration created successfully.' };
+  } catch (error) {
+    return { message: 'Failed to create integration.', error: 'Failed to create integration.' };
+  }
+}
+
+export async function updateEcommerceIntegration(id: number, prevState: z.infer<typeof formActionState>, formData: FormData) {
+  const validatedFields = ecommerceIntegrationSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!validatedFields.success) {
+     return { 
+        message: 'Validation failed',
+        error: validatedFields.error.flatten().fieldErrors 
+    };
+  }
+
+  try {
+    await db.update(ecommerceIntegrations).set(validatedFields.data).where(eq(ecommerceIntegrations.id, id));
+    revalidatePath('/admin/logistics');
+    return { message: 'Integration updated successfully.' };
+  } catch (error) {
+    return { message: 'Failed to update integration.', error: 'Failed to update integration.' };
+  }
+}
+
+export async function deleteEcommerceIntegration(id: number) {
+  try {
+    await db.delete(ecommerceIntegrations).where(eq(ecommerceIntegrations.id, id));
+    revalidatePath('/admin/logistics');
+    return { message: 'Integration deleted successfully.' };
+  } catch (error) {
+    return { error: 'Failed to delete integration.' };
+  }
 }

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, varchar, pgEnum, integer, timestamp, date } from 'drizzle-orm/pg-core';
+import { pgTable, text, serial, varchar, pgEnum, integer, timestamp, date, boolean } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
 export const roleEnum = pgEnum('role', ['admin', 'user']);
@@ -87,6 +87,14 @@ export const pickups = pgTable('pickups', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const ecommerceIntegrations = pgTable('ecommerce_integrations', {
+  id: serial('id').primaryKey(),
+  platform: varchar('platform', { length: 256 }).notNull(),
+  apiKey: text('api_key').notNull(),
+  apiSecret: text('api_secret'),
+  isActive: boolean('is_active').default(true).notNull(),
+});
+
 
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
@@ -114,3 +122,6 @@ export type NewCampaign = InferInsertModel<typeof campaigns>;
 
 export type Pickup = InferSelectModel<typeof pickups>;
 export type NewPickup = InferInsertModel<typeof pickups>;
+
+export type EcommerceIntegration = InferSelectModel<typeof ecommerceIntegrations>;
+export type NewEcommerceIntegration = InferInsertModel<typeof ecommerceIntegrations>;
