@@ -1,5 +1,3 @@
-'use client';
-
 import {
   Card,
   CardContent,
@@ -12,8 +10,8 @@ import { getInventoryCountsByStatus, getDonationsByLocation } from './inventory/
 import { InventoryJourney } from './inventory/_components/inventory-journey';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ImpactReportGenerator } from './_components/impact-report-generator';
-import { useAuth } from '@/context/auth-context';
-import { useEffect, useState } from 'react';
+import { getCurrentUser } from '@/lib/auth';
+import { DonationsChart } from './inventory/_components/donations-chart';
 
 
 const stats = {
@@ -51,25 +49,17 @@ const workflowSteps = [
     }
 ]
 
-export default function Home() {
-  const { user } = useAuth();
-  const [adminData, setAdminData] = useState<{
-      inventoryCounts: { status: string; count: number }[];
-      donationsByLocation: { name: string; count: number }[];
-  } | null>(null);
-
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      const fetchData = async () => {
-        const [inventoryCounts, donationsByLocation] = await Promise.all([
-          getInventoryCountsByStatus(),
-          getDonationsByLocation()
-        ]);
-        setAdminData({ inventoryCounts, donationsByLocation });
-      };
-      fetchData();
-    }
-  }, [user]);
+export default async function Home() {
+  const user = await getCurrentUser();
+  
+  let adminData = null;
+  if (user?.role === 'admin') {
+      const [inventoryCounts, donationsByLocation] = await Promise.all([
+        getInventoryCountsByStatus(),
+        getDonationsByLocation()
+      ]);
+      adminData = { inventoryCounts, donationsByLocation };
+  }
 
   return (
     <AppLayout>
@@ -119,7 +109,7 @@ export default function Home() {
             )}
             
             {adminData.donationsByLocation.length > 0 && (
-                <Card>
+                 <Card>
                     <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <MapPin className="text-primary"/>
@@ -127,20 +117,7 @@ export default function Home() {
                     </CardTitle>
                     </CardHeader>
                     <CardContent>
-                    <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={adminData.donationsByLocation} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} interval={0} />
-                            <YAxis allowDecimals={false} />
-                            <Tooltip
-                            cursor={{ fill: 'hsl(var(--muted))' }}
-                            contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
-                            />
-                            <Bar dataKey="count" fill="hsl(var(--primary))" name="Toys Collected" />
-                        </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+                        <DonationsChart data={adminData.donationsByLocation} />
                     </CardContent>
                 </Card>
             )}
