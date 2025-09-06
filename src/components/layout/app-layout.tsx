@@ -7,6 +7,7 @@ import { useAuth, User } from '@/context/auth-context';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { ChatWidget } from '../chat/chat-widget';
 
 
 function UserNav({ user, onLogout }: { user: User, onLogout: () => void }) {
@@ -85,6 +86,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 p-4 md:p-6 lg:p-8">
           {children}
         </main>
+        <ChatWidget />
       </SidebarInset>
     </SidebarProvider>
   );
