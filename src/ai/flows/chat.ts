@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -5,7 +6,6 @@
  *
  * - chat - A function that handles the conversation.
  * - ChatInput - The input type for the chat function.
- * - ChatOutput - The return type for the chat function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -101,7 +101,7 @@ const schedulePickupTool = ai.defineTool(
 );
 
 
-export const ChatInputSchema = z.object({
+const ChatInputSchema = z.object({
   history: z.array(z.any()),
   prompt: z.string(),
 });
