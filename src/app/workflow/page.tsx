@@ -1,38 +1,16 @@
 
-'use client';
-
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getAllPickups, getFilterData } from './actions';
-import { WorkflowTimeline } from './_components/workflow-timeline';
-import { useSearchParams } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
-import { DetailedPickup } from './actions';
-import { Loader2 } from 'lucide-react';
 import { WorkflowFilters } from './_components/workflow-filters';
-import type { Location, Partner } from '@/db/schema';
+import { WorkflowView } from './_components/workflow-view';
+import { ReadonlyURLSearchParams } from 'next/navigation';
 
-
-export default function WorkflowPage() {
-    const searchParams = useSearchParams();
-    const [pickups, setPickups] = useState<DetailedPickup[]>([]);
-    const [filterData, setFilterData] = useState<{ partners: Partner[]; locations: Location[] }>({ partners: [], locations: [] });
-    const [isPending, startTransition] = useTransition();
-    
-    useEffect(() => {
-        async function loadData() {
-            const data = await getFilterData();
-            setFilterData(data);
-        }
-        loadData();
-    }, []);
-
-    useEffect(() => {
-        startTransition(async () => {
-            const fetchedPickups = await getAllPickups(searchParams);
-            setPickups(fetchedPickups);
-        });
-    }, [searchParams]);
+export default async function WorkflowPage({ searchParams }: { searchParams: ReadonlyURLSearchParams}) {
+    const [filterData, initialPickups] = await Promise.all([
+        getFilterData(),
+        getAllPickups(searchParams)
+    ]);
 
     return (
         <AppLayout>
@@ -51,25 +29,8 @@ export default function WorkflowPage() {
                         <WorkflowFilters partners={filterData.partners} locations={filterData.locations} />
                     </CardContent>
                 </Card>
-
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-4">
-                             <CardTitle>Pickup History</CardTitle>
-                             {isPending && <Loader2 className="h-5 w-5 animate-spin" />}
-                        </div>
-                        <CardDescription>A timeline of donation pickups based on your filters.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       {isPending ? (
-                           <div className="flex justify-center items-center h-64">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                           </div>
-                       ) : (
-                           <WorkflowTimeline pickups={pickups} />
-                       )}
-                    </CardContent>
-                </Card>
+                
+                <WorkflowView initialPickups={initialPickups} />
             </div>
         </AppLayout>
     );
