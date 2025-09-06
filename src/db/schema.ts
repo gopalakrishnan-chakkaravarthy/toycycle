@@ -1,4 +1,4 @@
-import { pgTable, text, serial, varchar, pgEnum, integer, timestamp, date, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, serial, varchar, pgEnum, integer, timestamp, date, boolean, decimal } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
 export const roleEnum = pgEnum('role', ['admin', 'user']);
@@ -84,6 +84,7 @@ export const pickups = pgTable('pickups', {
     accessoryTypeId: integer('accessory_type_id').references(() => accessoryTypes.id).notNull(),
     status: pickupStatusEnum('status').notNull().default('scheduled'),
     notes: text('notes'),
+    collectionCost: decimal('collection_cost', { precision: 10, scale: 2 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

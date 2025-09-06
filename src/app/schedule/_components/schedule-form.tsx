@@ -58,6 +58,7 @@ const scheduleFormSchema = z.object({
     required_error: 'Please select an accessory type.',
   }),
   notes: z.string().optional(),
+  collectionCost: z.coerce.number().optional(),
 }).refine(data => {
     if (data.pickupType === 'my-address') return !!data.address && data.address.length >= 10;
     return true;
@@ -287,6 +288,23 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                     )}
                                 />
                             )}
+
+                             <FormField
+                                control={form.control}
+                                name="collectionCost"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Collection Cost (optional)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" placeholder="10.00" {...field} />
+                                    </FormControl>
+                                    <FormDescription>
+                                        Enter the cost associated with this pickup, if any.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
 
                             <FormField
                                 control={form.control}

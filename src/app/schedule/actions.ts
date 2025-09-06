@@ -22,6 +22,7 @@ const schedulePickupSchema = z.object({
   toyConditionId: z.string().min(1, 'Please select a toy condition.'),
   accessoryTypeId: z.string().min(1, 'Please select an accessory type.'),
   notes: z.string().optional(),
+  collectionCost: z.string().optional(),
 }).refine(data => {
     if (data.pickupType === 'my-address') return !!data.address && data.address.length >= 10;
     return true;
@@ -187,6 +188,7 @@ export async function updatePickupStatus(pickupId: number, status: 'scheduled' |
         }
 
         revalidatePath('/schedule');
+        revalidatePath('/workflow');
         return { message: `Pickup status updated to ${status}.` };
 
     } catch (error) {
@@ -198,19 +200,7 @@ export async function updatePickupStatus(pickupId: number, status: 'scheduled' |
 
 
 export async function schedulePickup(prevState: z.infer<typeof formActionState>, formData: FormData) {
-  const validatedFields = schedulePickupSchema.safeParse({
-    name: formData.get('name'),
-    email: formData.get('email'),
-    pickupType: formData.get('pickupType'),
-    address: formData.get('address'),
-    locationId: formData.get('locationId'),
-    partnerId: formData.get('partnerId'),
-    pickupDate: formData.get('pickupDate'),
-    timeSlot: formData.get('timeSlot'),
-    toyConditionId: formData.get('toyConditionId'),
-    accessoryTypeId: formData.get('accessoryTypeId'),
-    notes: formData.get('notes'),
-  });
+  const validatedFields = schedulePickupSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
     console.log(validatedFields.error.flatten().fieldErrors);
@@ -230,6 +220,7 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
             partnerId: validatedFields.data.partnerId ? parseInt(validatedFields.data.partnerId) : null,
             toyConditionId: parseInt(validatedFields.data.toyConditionId),
             accessoryTypeId: parseInt(validatedFields.data.accessoryTypeId),
+            collectionCost: validatedFields.data.collectionCost,
         });
     } catch (dbError) {
         console.error("Database Error:", dbError);
@@ -282,15 +273,18 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
 
     try {
       await sgMail.send(msg);
+      revalidatePath('/workflow');
       return { message: 'Pickup scheduled and email sent successfully.' };
     } catch (error) {
       console.error('SendGrid Error:', error);
       // If the email fails, we still want to inform the user that the pickup was scheduled.
       // In a real application, you might handle this more robustly (e.g., retry sending).
+      revalidatePath('/workflow');
       return { message: 'Pickup scheduled, but failed to send confirmation email.' };
     }
   }
 
+  revalidatePath('/workflow');
   // Fallback if SendGrid is not configured
   return { message: 'Pickup scheduled successfully.' };
 }
