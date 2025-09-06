@@ -1,12 +1,12 @@
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Inventory, ToyCondition } from '@/db/schema';
+import { Inventory, Partner, ToyCondition } from '@/db/schema';
 import { InventoryDataTable } from './_components/inventory-data-table';
 import { columns } from './_components/columns';
 
-async function getWarehouseData(): Promise<{ inventory: Inventory[], conditions: ToyCondition[] }> {
+async function getWarehouseData(): Promise<{ inventory: Inventory[], conditions: ToyCondition[], partners: Partner[] }> {
     if (!process.env.POSTGRES_URL) {
-        return { inventory: [], conditions: [] };
+        return { inventory: [], conditions: [], partners: [] };
     }
 
     try {
@@ -17,18 +17,19 @@ async function getWarehouseData(): Promise<{ inventory: Inventory[], conditions:
             }
         });
         const conditions = await db.query.toyConditions.findMany();
+        const partners = await db.query.partners.findMany();
 
         // @ts-ignore
-        return { inventory, conditions };
+        return { inventory, conditions, partners };
     } catch (error) {
         console.error("Failed to fetch warehouse data:", error);
-        return { inventory: [], conditions: [] };
+        return { inventory: [], conditions: [], partners: [] };
     }
 }
 
 
 export default async function WarehousePage() {
-    const { inventory, conditions } = await getWarehouseData();
+    const { inventory, conditions, partners } = await getWarehouseData();
 
     return (
         <AppLayout>
@@ -46,7 +47,7 @@ export default async function WarehousePage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-               <InventoryDataTable columns={columns} data={inventory} conditions={conditions} />
+               <InventoryDataTable columns={columns} data={inventory} conditions={conditions} partners={partners} />
             </CardContent>
             </Card>
         </div>

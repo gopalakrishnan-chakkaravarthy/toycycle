@@ -18,6 +18,7 @@ const inventorySchema = z.object({
   status: z.enum(['received', 'sanitizing', 'listed', 'redistributed']),
   imageUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   imageHint: z.string().optional(),
+  redistributedToPartnerId: z.coerce.number().optional(),
 });
 
 async function getDb() {
@@ -62,8 +63,17 @@ export async function updateInventoryItem(id: number, prevState: z.infer<typeof 
   
   try {
     const db = await getDb();
-    await db.update(inventory).set(validatedFields.data).where(eq(inventory.id, id));
+    const dataToUpdate = { ...validatedFields.data };
+    
+    if(dataToUpdate.status === 'redistributed' && dataToUpdate.redistributedToPartnerId) {
+        // @ts-ignore
+        dataToUpdate.logisticsStatus = 'delivered';
+    }
+
+
+    await db.update(inventory).set(dataToUpdate).where(eq(inventory.id, id));
     revalidatePath('/warehouse');
+    revalidatePath('/admin/logistics');
     return { message: 'Item updated successfully.' };
   } catch (error) {
      console.error(error);

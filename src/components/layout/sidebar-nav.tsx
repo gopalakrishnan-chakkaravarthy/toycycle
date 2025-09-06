@@ -16,6 +16,7 @@ import {
   Warehouse,
   Megaphone,
   AreaChart,
+  Truck,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -31,6 +32,7 @@ const navItems = [
   { href: '/inventory', label: 'Inventory', icon: AreaChart, roles: ['admin'] },
   { href: '/warehouse', label: 'Warehouse', icon: Warehouse, roles: ['admin'] },
   { href: '/admin/campaigns', label: 'Campaigns', icon: Megaphone, roles: ['admin'] },
+  { href: '/admin/logistics', label: 'Logistics', icon: Truck, roles: ['admin'] },
 ];
 
 export function SidebarNav() {

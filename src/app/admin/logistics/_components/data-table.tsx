@@ -17,65 +17,34 @@ import {
 } from '@tanstack/react-table';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Inventory, ToyCondition, inventoryStatusEnum, Partner } from '@/db/schema';
-import { InventoryFormDialog } from './inventory-form-dialog';
-import { DeleteConfirmationDialog } from '@/app/admin/_components/delete-confirmation-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteInventoryItem } from '../actions';
 import { DataTableToolbar } from './data-table-toolbar';
+import { logisticsStatusEnum } from '@/db/schema';
+import { requestRecollection } from '../actions';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  conditions: ToyCondition[];
-  partners: Partner[];
 }
 
-export function InventoryDataTable<TData, TValue>({
+export function LogisticsDataTable<TData, TValue>({
   columns,
   data,
-  conditions,
-  partners,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  
-  const [isFormOpen, setIsFormOpen] = React.useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
-  const [selectedItem, setSelectedItem] = React.useState<Inventory | null>(null);
   const { toast } = useToast();
 
-  const handleEdit = (item: Inventory) => {
-    setSelectedItem(item);
-    setIsFormOpen(true);
-  };
-
-  const handleAddNew = () => {
-    setSelectedItem(null);
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = (item: Inventory) => {
-    setSelectedItem(item);
-    setIsDeleteOpen(true);
-  };
-
-  const performDelete = async () => {
-    if (!selectedItem) return;
-
-    const result = await deleteInventoryItem(selectedItem.id);
-
+  const handleRequestRecollection = async (item: TData & { id: number }) => {
+    const result = await requestRecollection(item.id);
     if (result.error) {
       toast({ variant: 'destructive', title: 'Error', description: result.error });
     } else {
       toast({ title: 'Success', description: result.message });
-      setIsDeleteOpen(false);
-      setSelectedItem(null);
     }
   };
-
 
   const table = useReactTable({
     data,
@@ -87,8 +56,7 @@ export function InventoryDataTable<TData, TValue>({
       columnFilters,
     },
     meta: {
-      openEditDialog: handleEdit,
-      openDeleteDialog: handleDelete,
+      requestRecollection: handleRequestRecollection,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
@@ -103,11 +71,11 @@ export function InventoryDataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
   
-  const statusOptions = inventoryStatusEnum.enumValues.map(s => ({label: s.charAt(0).toUpperCase() + s.slice(1), value: s}));
+  const statusOptions = logisticsStatusEnum.enumValues.map(s => ({label: s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' '), value: s}));
 
   return (
     <div className="space-y-4">
-       <DataTableToolbar table={table} onAddNew={handleAddNew} statusOptions={statusOptions} />
+       <DataTableToolbar table={table} statusOptions={statusOptions} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -158,22 +126,6 @@ export function InventoryDataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-
-       <InventoryFormDialog
-        isOpen={isFormOpen}
-        setIsOpen={setIsFormOpen}
-        item={selectedItem}
-        conditions={conditions}
-        partners={partners}
-      />
-      
-      <DeleteConfirmationDialog
-        isOpen={isDeleteOpen}
-        setIsOpen={setIsDeleteOpen}
-        onConfirm={performDelete}
-        title="Delete Inventory Item"
-        description={`Are you sure you want to delete "${selectedItem?.name}"? This action cannot be undone.`}
-      />
     </div>
   );
 }

@@ -12,8 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Inventory, ToyCondition, inventoryStatusEnum } from '@/db/schema';
-import { useActionState, useEffect } from 'react';
+import { Inventory, ToyCondition, inventoryStatusEnum, Partner } from '@/db/schema';
+import { useActionState, useEffect, useState } from 'react';
 import { createInventoryItem, updateInventoryItem } from '../actions';
 import { useToast } from '@/hooks/use-toast';
 import { SubmitButton } from '@/app/admin/_components/submit-button';
@@ -25,6 +25,7 @@ interface InventoryFormDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   item: Inventory | null;
   conditions: ToyCondition[];
+  partners: Partner[];
 }
 
 const initialState = {
@@ -33,10 +34,15 @@ const initialState = {
 };
 
 
-export function InventoryFormDialog({ isOpen, setIsOpen, item, conditions }: InventoryFormDialogProps) {
+export function InventoryFormDialog({ isOpen, setIsOpen, item, conditions, partners }: InventoryFormDialogProps) {
   const { toast } = useToast();
   const action = item ? updateInventoryItem.bind(null, item.id) : createInventoryItem;
   const [state, formAction] = useActionState(action, initialState);
+  const [status, setStatus] = useState(item?.status ?? 'received');
+
+  useEffect(() => {
+    setStatus(item?.status ?? 'received');
+  }, [item]);
 
   useEffect(() => {
     if (!state) return;
@@ -87,7 +93,7 @@ export function InventoryFormDialog({ isOpen, setIsOpen, item, conditions }: Inv
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="status">Status</Label>
-                     <Select name="status" defaultValue={item?.status ?? 'received'}>
+                     <Select name="status" defaultValue={status} onValueChange={setStatus}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select status" />
                         </SelectTrigger>
@@ -98,6 +104,20 @@ export function InventoryFormDialog({ isOpen, setIsOpen, item, conditions }: Inv
                     {fieldErrors?.status && <p className="text-destructive text-sm">{fieldErrors.status[0]}</p>}
                 </div>
             </div>
+            {status === 'redistributed' && (
+                 <div className="space-y-2">
+                    <Label htmlFor="redistributedToPartnerId">Redistribute To Partner</Label>
+                    <Select name="redistributedToPartnerId" defaultValue={item?.redistributedToPartnerId ? String(item.redistributedToPartnerId) : undefined}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a partner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {partners.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    {fieldErrors?.redistributedToPartnerId && <p className="text-destructive text-sm">{fieldErrors.redistributedToPartnerId[0]}</p>}
+                </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="imageUrl">Image URL</Label>
               <Input id="imageUrl" name="imageUrl" defaultValue={item?.imageUrl ?? ''} placeholder="https://picsum.photos/200" />

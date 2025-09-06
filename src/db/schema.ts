@@ -5,6 +5,7 @@ export const roleEnum = pgEnum('role', ['admin', 'user']);
 export const inventoryStatusEnum = pgEnum('inventory_status', ['received', 'sanitizing', 'listed', 'redistributed']);
 export const pickupTypeEnum = pgEnum('pickup_type', ['my-address', 'drop-off', 'partner']);
 export const pickupStatusEnum = pgEnum('pickup_status', ['scheduled', 'completed', 'cancelled']);
+export const logisticsStatusEnum = pgEnum('logistics_status', ['delivered', 'recollection_requested', 'recollected']);
 
 
 export const users = pgTable('users', {
@@ -50,6 +51,8 @@ export const inventory = pgTable('inventory', {
     imageUrl: text('image_url'),
     imageHint: varchar('image_hint', { length: 256 }),
     locationId: integer('location_id').references(() => locations.id),
+    redistributedToPartnerId: integer('redistributed_to_partner_id').references(() => partners.id),
+    logisticsStatus: logisticsStatusEnum('logistics_status'),
 });
 
 export const donations = pgTable('donations', {
