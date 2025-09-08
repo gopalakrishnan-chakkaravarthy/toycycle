@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const checkUser = async () => {
+      setIsLoading(true);
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
@@ -35,9 +36,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkUser();
   }, []);
 
+  useEffect(() => {
+    if (isLoading) return;
+
+    const isPublicPage = pathname === '/login' || pathname === '/signup';
+
+    if (!user && !isPublicPage) {
+      router.push('/login');
+    } else if (user && isPublicPage) {
+      router.push('/');
+    }
+  }, [user, isLoading, pathname, router]);
+
   const login = async (email: string, pass: string) => {
     const loggedInUser = await apiLogin(email, pass);
     setUser(loggedInUser);
+    router.push('/');
   };
 
   const logout = async () => {
@@ -45,38 +59,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     router.push('/login');
   };
-
-  const isPublicPage = pathname === '/login' || pathname === '/signup';
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (!user && !isPublicPage) {
-      router.push('/login');
-    }
-    if (user && isPublicPage) {
-      router.push('/');
-    }
-  }, [user, isLoading, isPublicPage, pathname, router]);
-
+  
   const value = { user, isLoading, login, logout };
 
-  if (isLoading) {
+  const isPublicPage = pathname === '/login' || pathname === '/signup';
+  if (isLoading || (!user && !isPublicPage) || (user && isPublicPage)) {
     return (
         <div className="flex h-screen w-screen items-center justify-center">
             <p>Loading...</p>
         </div>
     );
-  }
-
-  if (!user && !isPublicPage) {
-    // While redirecting, return null to prevent rendering protected content
-    return null;
-  }
-  
-  if (user && isPublicPage) {
-    // While redirecting authenticated user from public page
-    return null;
   }
 
   return (
