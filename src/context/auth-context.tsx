@@ -38,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, pass: string) => {
     const loggedInUser = await apiLogin(email, pass);
     setUser(loggedInUser);
-    router.push('/');
   };
 
   const logout = async () => {
@@ -50,11 +49,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isPublicPage = pathname === '/login' || pathname === '/signup';
 
   useEffect(() => {
-    if (!isLoading && !user && !isPublicPage) {
+    if (isLoading) return;
+
+    if (!user && !isPublicPage) {
       router.push('/login');
     }
-  }, [isLoading, user, isPublicPage, pathname, router]);
+    if (user && isPublicPage) {
+      router.push('/');
+    }
+  }, [user, isLoading, isPublicPage, pathname, router]);
 
+  const value = { user, isLoading, login, logout };
 
   if (isLoading) {
     return (
@@ -63,13 +68,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         </div>
     );
   }
-  
+
   if (!user && !isPublicPage) {
-    // Render nothing while the redirect is happening
+    // While redirecting, return null to prevent rendering protected content
     return null;
   }
-
-  const value = { user, isLoading, login, logout };
+  
+  if (user && isPublicPage) {
+    // While redirecting authenticated user from public page
+    return null;
+  }
 
   return (
     <AuthContext.Provider value={value}>
