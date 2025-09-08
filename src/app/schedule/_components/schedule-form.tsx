@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -113,6 +114,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
       email: user?.email ?? '',
       notes: '',
       pickupDate: selectedDate,
+      collectionCost: undefined,
     }
   });
 
@@ -168,6 +170,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                         onValueChange={field.onChange}
                                         defaultValue={field.value}
                                         className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                                        name={field.name}
                                         >
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                             <FormControl>
@@ -247,7 +250,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Community Drop-off Point</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
                                         <FormControl>
                                             <SelectTrigger>
                                             <SelectValue placeholder="Select a location" />
@@ -271,7 +274,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Partner Organization</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
                                         <FormControl>
                                             <SelectTrigger>
                                             <SelectValue placeholder="Select a partner" />
@@ -296,7 +299,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                 <FormItem>
                                     <FormLabel>Collection Cost (optional)</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="10.00" {...field} />
+                                    <Input type="number" placeholder="10.00" {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormDescription>
                                         Enter the cost associated with this pickup, if any.
@@ -312,9 +315,9 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Time Slot</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
                                     <FormControl>
-                                        <SelectTrigger name="timeSlotBtn">
+                                        <SelectTrigger>
                                             <SelectValue placeholder="Select a time slot" />
                                         </SelectTrigger>
                                     </FormControl>
@@ -336,9 +339,9 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Toy Condition</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
                                         <FormControl>
-                                            <SelectTrigger name="toyConditionIdBtn">
+                                            <SelectTrigger>
                                                 <SelectValue placeholder="Select condition" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -358,9 +361,9 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Accessory Type</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
                                         <FormControl>
-                                            <SelectTrigger name="accessoryTypeIdBtn">
+                                            <SelectTrigger>
                                                 <SelectValue placeholder="Select type" />
                                             </SelectTrigger>
                                         </FormControl>
