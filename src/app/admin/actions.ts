@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { partners, locations, accessoryTypes, toyConditions, campaigns } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { db } from '@/db';
 
 const formActionState = z.object({
   message: z.string(),
@@ -39,16 +40,6 @@ const campaignSchema = z.object({
   endDate: z.string().min(1, 'End date is required'),
 });
 
-
-async function getDb() {
-    if (!process.env.POSTGRES_URL) {
-        throw new Error("Database not configured. POSTGRES_URL is missing.");
-    }
-    const { db } = await import('@/db');
-    return db;
-}
-
-
 // Partner Actions
 export async function createPartner(prevState: z.infer<typeof formActionState>, formData: FormData) {
   const validatedFields = partnerSchema.safeParse(Object.fromEntries(formData.entries()));
@@ -61,7 +52,6 @@ export async function createPartner(prevState: z.infer<typeof formActionState>, 
   }
 
   try {
-    const db = await getDb();
     await db.insert(partners).values(validatedFields.data);
     revalidatePath('/admin');
     revalidatePath('/partners');
@@ -82,7 +72,6 @@ export async function updatePartner(id: number, prevState: z.infer<typeof formAc
   }
   
   try {
-    const db = await getDb();
     await db.update(partners).set(validatedFields.data).where(eq(partners.id, id));
     revalidatePath('/admin');
     revalidatePath('/partners');
@@ -94,7 +83,6 @@ export async function updatePartner(id: number, prevState: z.infer<typeof formAc
 
 export async function deletePartner(id: number) {
   try {
-    const db = await getDb();
     await db.delete(partners).where(eq(partners.id, id));
     revalidatePath('/admin');
     revalidatePath('/partners');
@@ -117,7 +105,6 @@ export async function createLocation(prevState: z.infer<typeof formActionState>,
   }
 
   try {
-    const db = await getDb();
     await db.insert(locations).values(validatedFields.data);
     revalidatePath('/admin');
     revalidatePath('/locations');
@@ -138,7 +125,6 @@ export async function updateLocation(id: number, prevState: z.infer<typeof formA
   }
 
   try {
-    const db = await getDb();
     await db.update(locations).set(validatedFields.data).where(eq(locations.id, id));
     revalidatePath('/admin');
     revalidatePath('/locations');
@@ -150,7 +136,6 @@ export async function updateLocation(id: number, prevState: z.infer<typeof formA
 
 export async function deleteLocation(id: number) {
   try {
-    const db = await getDb();
     await db.delete(locations).where(eq(locations.id, id));
     revalidatePath('/admin');
     revalidatePath('/locations');
@@ -172,7 +157,6 @@ export async function createAccessoryType(prevState: z.infer<typeof formActionSt
   }
 
   try {
-    const db = await getDb();
     await db.insert(accessoryTypes).values(validatedFields.data);
     revalidatePath('/admin');
     return { message: 'Accessory type created successfully.' };
@@ -192,7 +176,6 @@ export async function updateAccessoryType(id: number, prevState: z.infer<typeof 
   }
 
   try {
-    const db = await getDb();
     await db.update(accessoryTypes).set(validatedFields.data).where(eq(accessoryTypes.id, id));
     revalidatePath('/admin');
     return { message: 'Accessory type updated successfully.' };
@@ -203,7 +186,6 @@ export async function updateAccessoryType(id: number, prevState: z.infer<typeof 
 
 export async function deleteAccessoryType(id: number) {
   try {
-    const db = await getDb();
     await db.delete(accessoryTypes).where(eq(accessoryTypes.id, id));
     revalidatePath('/admin');
     return { message: 'Accessory type deleted successfully.' };
@@ -224,7 +206,6 @@ export async function createToyCondition(prevState: z.infer<typeof formActionSta
   }
 
   try {
-    const db = await getDb();
     await db.insert(toyConditions).values(validatedFields.data);
     revalidatePath('/admin');
     return { message: 'Toy condition created successfully.' };
@@ -244,7 +225,6 @@ export async function updateToyCondition(id: number, prevState: z.infer<typeof f
   }
 
   try {
-    const db = await getDb();
     await db.update(toyConditions).set(validatedFields.data).where(eq(toyConditions.id, id));
     revalidatePath('/admin');
     return { message: 'Toy condition updated successfully.' };
@@ -255,7 +235,6 @@ export async function updateToyCondition(id: number, prevState: z.infer<typeof f
 
 export async function deleteToyCondition(id: number) {
   try {
-    const db = await getDb();
     await db.delete(toyConditions).where(eq(toyConditions.id, id));
     revalidatePath('/admin');
     return { message: 'Toy condition deleted successfully.' };
@@ -276,7 +255,6 @@ export async function createCampaign(prevState: z.infer<typeof formActionState>,
   }
 
   try {
-    const db = await getDb();
     await db.insert(campaigns).values({
       ...validatedFields.data,
       endDate: new Date(validatedFields.data.endDate),
@@ -299,7 +277,6 @@ export async function updateCampaign(id: number, prevState: z.infer<typeof formA
   }
   
   try {
-    const db = await getDb();
     await db.update(campaigns).set({
       ...validatedFields.data,
       endDate: new Date(validatedFields.data.endDate),
@@ -313,7 +290,6 @@ export async function updateCampaign(id: number, prevState: z.infer<typeof formA
 
 export async function deleteCampaign(id: number) {
   try {
-    const db = await getDb();
     await db.delete(campaigns).where(eq(campaigns.id, id));
     revalidatePath('/admin/campaigns');
     return { message: 'Campaign deleted successfully.' };

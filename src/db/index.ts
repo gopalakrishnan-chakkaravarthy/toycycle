@@ -11,8 +11,9 @@ if (process.env.POSTGRES_URL) {
   const client = postgres(process.env.POSTGRES_URL);
   db = drizzle(client, { schema, logger: true });
 } else {
+  console.log('Database URL not found, using mock database.');
   // This is a placeholder for when no database is configured.
-  // The application logic should prevent this from being used.
+  // The application logic should prevent this from being used for queries.
   // @ts-ignore
   db = {};
 }
