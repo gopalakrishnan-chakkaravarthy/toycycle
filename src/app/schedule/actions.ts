@@ -22,7 +22,7 @@ const schedulePickupSchema = z.object({
   toyConditionId: z.string().min(1, 'Please select a toy condition.'),
   accessoryTypeId: z.string().min(1, 'Please select an accessory type.'),
   notes: z.string().optional(),
-  collectionCost: z.string().optional(),
+  collectionCost: z.coerce.number().optional(),
 }).refine(data => {
     if (data.pickupType === 'my-address') return !!data.address && data.address.length >= 10;
     return true;
@@ -213,15 +213,17 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
   // Save to database if configured
   if (process.env.POSTGRES_URL) {
     try {
-        await db.insert(pickups).values({
+        const dataToInsert = {
             ...validatedFields.data,
             pickupDate: startOfDay(new Date(validatedFields.data.pickupDate)),
             locationId: validatedFields.data.locationId ? parseInt(validatedFields.data.locationId) : null,
             partnerId: validatedFields.data.partnerId ? parseInt(validatedFields.data.partnerId) : null,
             toyConditionId: parseInt(validatedFields.data.toyConditionId),
             accessoryTypeId: parseInt(validatedFields.data.accessoryTypeId),
-            collectionCost: validatedFields.data.collectionCost,
-        });
+            collectionCost: validatedFields.data.collectionCost ? String(validatedFields.data.collectionCost) : null,
+        };
+        // @ts-ignore
+        await db.insert(pickups).values(dataToInsert);
     } catch (dbError) {
         console.error("Database Error:", dbError);
         return {
