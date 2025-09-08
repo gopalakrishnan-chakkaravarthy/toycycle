@@ -129,19 +129,20 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
   useEffect(() => {
     if (!state) return;
     if (state.message && !state.error) {
-       const pickupDate = form.getValues('pickupDate');
        const timeSlot = form.getValues('timeSlot');
        toast({
         title: "Pickup Scheduled!",
-        description: `We'll see you on ${format(pickupDate, 'PPP')} between ${timeSlot}.`,
+        description: `We'll see you on ${selectedDate ? format(selectedDate, 'PPP') : 'your selected date'} between ${timeSlot}.`,
       });
-      form.reset({ name: user?.name ?? '', email: user?.email ?? '', address: '', notes: '', pickupType: 'my-address' });
-      onSuccess(pickupDate);
+      form.reset({ name: user?.name ?? '', email: user?.email ?? '', address: '', notes: '', pickupType: 'my-address', collectionCost: undefined });
+      if (selectedDate) {
+        onSuccess(selectedDate);
+      }
     }
     if (typeof state.error === 'string') {
         toast({ variant: 'destructive', title: 'Error', description: state.error });
     }
-  }, [state, toast, form, user, onSuccess]);
+  }, [state, toast, form, user, onSuccess, selectedDate]);
 
   const fieldErrors = typeof state.error === 'object' ? state.error : {};
 
