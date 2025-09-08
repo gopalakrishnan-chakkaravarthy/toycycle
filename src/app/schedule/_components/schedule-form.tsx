@@ -145,10 +145,10 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-4xl grid-cols-1 md:grid-cols-2">
+        <DialogContent className="max-w-4xl">
             <DialogHeader>
-            <DialogTitle>Schedule Pickup for {selectedDate ? format(selectedDate, 'PPP') : 'your selected date'}</DialogTitle>
-            <DialogDescription>Fill out the form below to finalize your donation pickup.</DialogDescription>
+                <DialogTitle>Schedule Pickup for {selectedDate ? format(selectedDate, 'PPP') : 'your selected date'}</DialogTitle>
+                <DialogDescription>Fill out the form below to finalize your donation pickup.</DialogDescription>
             </DialogHeader>
             
             <div className="grid gap-8 md:grid-cols-2 pt-4">
