@@ -50,7 +50,7 @@ function UserNav({ user, onLogout }: { user: User, onLogout: () => void }) {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, isLoading } = useAuth();
   
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
         <div className="flex h-screen w-screen items-center justify-center">
             <p>Loading...</p>
@@ -73,7 +73,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
             <SidebarMenu>
                 <SidebarMenuItem>
-                   <UserNav user={user} onLogout={logout} />
+                   {user && <UserNav user={user} onLogout={logout} />}
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarFooter>
