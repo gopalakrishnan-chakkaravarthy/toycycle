@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import sgMail from '@sendgrid/mail';
-import { format, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import { db } from '@/db';
 import { AccessoryType, Location, Partner, Pickup, ToyCondition, pickups, pickupStatusEnum } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
@@ -214,9 +214,16 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
   // Save to database if configured
   if (process.env.POSTGRES_URL) {
     try {
-        const { pickupType, collectionCost, ...rest } = validatedFields.data;
+        const { collectionCost, ...rest } = validatedFields.data;
         
-        const cost = collectionCost === '' || collectionCost === undefined ? null : parseFloat(collectionCost);
+        const cost = collectionCost === '' || collectionCost === undefined || collectionCost === null ? null : parseFloat(collectionCost);
+        
+        if (cost !== null && isNaN(cost)) {
+            return {
+                message: 'Invalid collection cost',
+                error: 'Please enter a valid number for the collection cost.',
+            };
+        }
 
         const dataToInsert = {
             ...rest,
