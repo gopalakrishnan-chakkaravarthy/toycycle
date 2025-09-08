@@ -22,7 +22,7 @@ const schedulePickupSchema = z.object({
   toyConditionId: z.string().min(1, 'Please select a toy condition.'),
   accessoryTypeId: z.string().min(1, 'Please select an accessory type.'),
   notes: z.string().optional(),
-  collectionCost: z.coerce.number().optional(),
+  collectionCost: z.string().optional(),
 }).refine(data => {
     if (data.pickupType === 'my-address') return !!data.address && data.address.length >= 10;
     return true;
@@ -129,13 +129,13 @@ export async function getPickupsForDate(date: Date): Promise<DetailedPickup[]> {
      try {
         const whereClause = user.role === 'admin' 
             ? eq(pickups.pickupDate, format(date, 'yyyy-MM-dd'))
+            // @ts-ignore
             : and(
                 eq(pickups.pickupDate, format(date, 'yyyy-MM-dd')),
                 eq(pickups.name, user.name)
             );
 
         const result = await db.query.pickups.findMany({
-            // @ts-ignore
             where: whereClause,
             with: {
                 location: true,
@@ -200,8 +200,9 @@ export async function updatePickupStatus(pickupId: number, status: 'scheduled' |
 
 
 export async function schedulePickup(prevState: z.infer<typeof formActionState>, formData: FormData) {
-  const validatedFields = schedulePickupSchema.safeParse(Object.fromEntries(formData.entries()));
-
+  const rawData = Object.fromEntries(formData.entries());
+  const validatedFields = schedulePickupSchema.safeParse(rawData);
+  
   if (!validatedFields.success) {
     console.log(validatedFields.error.flatten().fieldErrors);
     return {
@@ -213,7 +214,7 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
   // Save to database if configured
   if (process.env.POSTGRES_URL) {
     try {
-        const { pickupType, ...rest } = validatedFields.data;
+        const { pickupType, collectionCost, ...rest } = validatedFields.data;
         const dataToInsert = {
             ...rest,
             pickupDate: startOfDay(new Date(validatedFields.data.pickupDate)),
@@ -221,9 +222,9 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
             partnerId: validatedFields.data.partnerId ? parseInt(validatedFields.data.partnerId) : null,
             toyConditionId: parseInt(validatedFields.data.toyConditionId),
             accessoryTypeId: parseInt(validatedFields.data.accessoryTypeId),
-            collectionCost: validatedFields.data.collectionCost ? validatedFields.data.collectionCost : null,
+            collectionCost: collectionCost ? parseFloat(collectionCost) : null,
         };
-        // @ts-ignore
+
         await db.insert(pickups).values(dataToInsert);
     } catch (dbError) {
         console.error("Database Error:", dbError);
