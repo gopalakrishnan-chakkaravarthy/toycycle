@@ -7,7 +7,6 @@ import { usePathname, useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
-  isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<void>;
   logout: () => void;
@@ -39,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, pass: string) => {
     const loggedInUser = await apiLogin(email, pass);
     setUser(loggedInUser);
+    router.push('/');
   };
 
   const logout = async () => {
@@ -47,15 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
-  const isAuthenticated = !isLoading && !!user;
-  
-  const isProtectedRoute = pathname !== '/login' && pathname !== '/signup';
-  
+  const isPublicPage = pathname === '/login' || pathname === '/signup';
+
   useEffect(() => {
-    if (!isLoading && !user && isProtectedRoute) {
-      router.replace('/login');
+    if (!isLoading && !user && !isPublicPage) {
+      router.push('/login');
     }
-  }, [isLoading, user, isProtectedRoute, router]);
+  }, [isLoading, user, isPublicPage, pathname, router]);
 
 
   if (isLoading) {
@@ -65,13 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         </div>
     );
   }
-
-  if (!isAuthenticated && isProtectedRoute) {
-    // Render nothing while redirecting
+  
+  if (!user && !isPublicPage) {
+    // Render nothing while the redirect is happening
     return null;
   }
 
-  const value = { user, isAuthenticated, isLoading, login, logout };
+  const value = { user, isLoading, login, logout };
 
   return (
     <AuthContext.Provider value={value}>
