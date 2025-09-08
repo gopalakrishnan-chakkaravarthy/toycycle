@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarTrigger, SidebarInset, SidebarFooter, SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar';
@@ -50,12 +51,8 @@ function UserNav({ user, onLogout }: { user: User, onLogout: () => void }) {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, isLoading } = useAuth();
   
-  if (isLoading) {
-    return (
-        <div className="flex h-screen w-screen items-center justify-center">
-            <p>Loading...</p>
-        </div>
-    );
+  if (isLoading || !user) {
+    return null; // Return null or a loading spinner, but AuthProvider already handles the main loading state
   }
 
   return (

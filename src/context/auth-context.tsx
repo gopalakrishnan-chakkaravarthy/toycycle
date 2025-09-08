@@ -22,13 +22,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const fetchUser = async () => {
-        setIsLoading(true);
+    const checkUser = async () => {
+      try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
+      } catch (error) {
+        console.error("Failed to fetch user", error);
+        setUser(null);
+      } finally {
         setIsLoading(false);
-    }
-    fetchUser();
+      }
+    };
+    checkUser();
   }, []);
 
   const login = async (email: string, pass: string) => {
@@ -41,22 +46,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     router.push('/login');
   };
-  
-  const isAuthenticated = !!user;
 
-  // Protect all routes except /login and /signup
+  const isAuthenticated = !isLoading && !!user;
+
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && pathname !== '/login' && pathname !== '/signup') {
+    const isProtectedRoute = pathname !== '/login' && pathname !== '/signup';
+    if (!isLoading && !isAuthenticated && isProtectedRoute) {
       router.replace('/login');
     }
   }, [isLoading, isAuthenticated, pathname, router]);
-
 
   const value = { user, isAuthenticated, isLoading, login, logout };
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {isLoading ? (
+         <div className="flex h-screen w-screen items-center justify-center">
+            <p>Loading...</p>
+        </div>
+      ) : children}
     </AuthContext.Provider>
   );
 }
