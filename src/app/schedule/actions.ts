@@ -214,14 +214,13 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
   // Save to database if configured
   if (process.env.POSTGRES_URL) {
     try {
-        const { pickupType, ...rest } = validatedFields.data;
+        const { pickupType, collectionCost, ...rest } = validatedFields.data;
         
-        const rawCost = validatedFields.data.collectionCost;
-        const cost = rawCost !== undefined && rawCost !== '' ? parseFloat(rawCost) : null;
+        const cost = collectionCost === '' || collectionCost === undefined ? null : parseFloat(collectionCost);
 
         const dataToInsert = {
             ...rest,
-            pickupDate: startOfDay(new Date(validatedFields.data.pickupDate)),
+            pickupDate: format(new Date(validatedFields.data.pickupDate), 'yyyy-MM-dd'),
             locationId: validatedFields.data.locationId ? parseInt(validatedFields.data.locationId) : null,
             partnerId: validatedFields.data.partnerId ? parseInt(validatedFields.data.partnerId) : null,
             toyConditionId: parseInt(validatedFields.data.toyConditionId),
