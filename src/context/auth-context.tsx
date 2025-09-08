@@ -1,9 +1,19 @@
+"use client";
 
-'use client';
-
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { login as apiLogin, User, logout as apiLogout, getCurrentUser } from '@/lib/auth';
-import { usePathname, useRouter } from 'next/navigation';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  ReactNode,
+} from "react";
+import {
+  login as apiLogin,
+  User,
+  logout as apiLogout,
+  getCurrentUser,
+} from "@/lib/auth";
+import { usePathname, useRouter } from "next/navigation";
 
 interface AuthContextType {
   user: User | null;
@@ -38,32 +48,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, pass: string) => {
     const loggedInUser = await apiLogin(email, pass);
     setUser(loggedInUser);
-    router.push('/');
+    router.push("/");
   };
 
   const logout = async () => {
     await apiLogout();
     setUser(null);
-    router.push('/login');
+    router.push("/login");
   };
 
-  const isPublicPage = pathname === '/login' || pathname === '/signup';
-
+  const isPublicPage = pathname === "/login" || pathname === "/signup";
   useEffect(() => {
     if (!isLoading && !user && !isPublicPage) {
-      router.push('/login');
+      if (pathname !== "/login") {
+        router.push("/login");
+      }
     }
   }, [isLoading, user, isPublicPage, pathname, router]);
 
-
   if (isLoading) {
     return (
-        <div className="flex h-screen w-screen items-center justify-center">
-            <p>Loading...</p>
-        </div>
+      <div className="flex h-screen w-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
     );
   }
-  
+
   if (!user && !isPublicPage) {
     // Render nothing while the redirect is happening
     return null;
@@ -71,17 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, isLoading, login, logout };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
