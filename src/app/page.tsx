@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -12,6 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { ImpactReportGenerator } from './_components/impact-report-generator';
 import { getCurrentUser } from '@/lib/auth';
 import { DonationsChart } from './inventory/_components/donations-chart';
+import type { User } from '@/lib/auth';
 
 
 const stats = {
@@ -49,17 +51,21 @@ const workflowSteps = [
     }
 ]
 
+async function getInventoryDashboardData(user: User | null) {
+  if (user?.role !== 'admin') {
+    return { inventoryCounts: [], donationsByLocation: [] };
+  }
+  const [inventoryCounts, donationsByLocation] = await Promise.all([
+    getInventoryCountsByStatus(),
+    getDonationsByLocation(),
+  ]);
+  return { inventoryCounts, donationsByLocation };
+}
+
+
 export default async function Home() {
   const user = await getCurrentUser();
-  
-  let adminData = null;
-  if (user?.role === 'admin') {
-      const [inventoryCounts, donationsByLocation] = await Promise.all([
-        getInventoryCountsByStatus(),
-        getDonationsByLocation()
-      ]);
-      adminData = { inventoryCounts, donationsByLocation };
-  }
+  const adminData = await getInventoryDashboardData(user);
 
   return (
     <AppLayout>
