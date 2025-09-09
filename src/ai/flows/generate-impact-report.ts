@@ -1,4 +1,4 @@
-'use server';
+"use server";
 
 /**
  * @fileOverview Generates a personalized impact report for ToyCycle users.
@@ -8,38 +8,53 @@
  * - GenerateImpactReportOutput - The return type for the generateImpactReport function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from "@/ai/genkit";
+import { z } from "genkit";
 
 const GenerateImpactReportInputSchema = z.object({
-  userId: z.string().describe('The ID of the user requesting the impact report.'),
+  userId: z
+    .string()
+    .describe("The ID of the user requesting the impact report."),
   toysRedistributed: z
     .number()
-    .describe('The total number of toys redistributed by ToyCycle.'),
+    .describe("The total number of toys redistributed by ToyCycle."),
   environmentalImpact: z
     .string()
-    .describe('A summary of the environmental impact of ToyCycle, e.g., reduction in landfill waste.'),
-  smilesCreated: z.number().describe('The estimated number of smiles created by ToyCycle.'),
+    .describe(
+      "A summary of the environmental impact of ToyCycle, e.g., reduction in landfill waste."
+    ),
+  smilesCreated: z
+    .number()
+    .describe("The estimated number of smiles created by ToyCycle."),
   userDonations: z
     .number()
     .optional()
-    .describe('The number of donations a user has made, if available.'),
+    .describe("The number of donations a user has made, if available."),
 });
-export type GenerateImpactReportInput = z.infer<typeof GenerateImpactReportInputSchema>;
+export type GenerateImpactReportInput = z.infer<
+  typeof GenerateImpactReportInputSchema
+>;
 
 const GenerateImpactReportOutputSchema = z.object({
-  impactReport: z.string().describe('A personalized impact report for the user.'),
+  impactReport: z
+    .string()
+    .describe("A personalized impact report for the user."),
 });
-export type GenerateImpactReportOutput = z.infer<typeof GenerateImpactReportOutputSchema>;
+export type GenerateImpactReportOutput = z.infer<
+  typeof GenerateImpactReportOutputSchema
+>;
 
-export async function generateImpactReport(input: GenerateImpactReportInput): Promise<GenerateImpactReportOutput> {
+export async function generateImpactReport(
+  input: GenerateImpactReportInput
+): Promise<GenerateImpactReportOutput> {
   return generateImpactReportFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'generateImpactReportPrompt',
-  input: {schema: GenerateImpactReportInputSchema},
-  output: {schema: GenerateImpactReportOutputSchema},
+  name: "generateImpactReportPrompt",
+  input: { schema: GenerateImpactReportInputSchema },
+  output: { schema: GenerateImpactReportOutputSchema },
+  model: ai.model,
   prompt: `You are an impact report generator for ToyCycle, which collects, sanitizes, and redistributes unused kids' toys and accessories.
 
   Generate a personalized impact report for user {{userId}} based on the following information:
@@ -63,12 +78,12 @@ const prompt = ai.definePrompt({
 
 const generateImpactReportFlow = ai.defineFlow(
   {
-    name: 'generateImpactReportFlow',
+    name: "generateImpactReportFlow",
     inputSchema: GenerateImpactReportInputSchema,
     outputSchema: GenerateImpactReportOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );

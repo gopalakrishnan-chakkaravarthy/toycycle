@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   ReactNode,
+  useMemo,
 } from "react";
 import {
   login as apiLogin,
@@ -30,13 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // --- 1. Load current user on mount
   useEffect(() => {
     const checkUser = async () => {
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
-      } catch (error) {
-        console.error("Failed to fetch user", error);
+      } catch {
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -45,27 +46,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkUser();
   }, []);
 
+  // --- 2. Login & logout handlers
   const login = async (email: string, pass: string) => {
     const loggedInUser = await apiLogin(email, pass);
     setUser(loggedInUser);
-    router.push("/");
+    router.replace("/"); // replace instead of push
   };
 
   const logout = async () => {
     await apiLogout();
     setUser(null);
-    router.push("/login");
+    router.replace("/login");
   };
 
-  const isPublicPage = pathname === "/login" || pathname === "/signup";
+  // --- 3. Public page check (memoized)
+  const isPublicPage = useMemo(
+    () => pathname === "/login" || pathname === "/signup",
+    [pathname]
+  );
+
+  // --- 4. Redirect only once when needed
   useEffect(() => {
     if (!isLoading && !user && !isPublicPage) {
+      // ⚡ prevent redirect loop by checking
       if (pathname !== "/login") {
-        router.push("/login");
+        router.replace("/login");
       }
     }
-  }, [isLoading, user, isPublicPage, pathname, router]);
+  }, [isLoading, user, isPublicPage, pathname]); // no `router` dep!
 
+  // --- 5. Loading screen
   if (isLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
@@ -74,14 +84,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  // --- 6. During redirect, render nothing
   if (!user && !isPublicPage) {
-    // Render nothing while the redirect is happening
     return null;
   }
 
-  const value = { user, isLoading, login, logout };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

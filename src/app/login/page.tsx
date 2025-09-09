@@ -1,19 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter, NextPage } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2, ToyBrick } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
+import { useState } from "react";
+import { useRouter, NextPage } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, ToyBrick } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
@@ -25,14 +32,14 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast({
-        title: 'Login Successful',
+        title: "Login Successful",
         description: "Welcome back! You're now logged in.",
       });
-      router.push('/');
+      router.replace("/");
     } catch (error) {
       toast({
-        variant: 'destructive',
-        title: 'Login Failed',
+        variant: "destructive",
+        title: "Login Failed",
         description: (error as Error).message,
       });
       setIsLoading(false);
@@ -47,7 +54,9 @@ export default function LoginPage() {
             <ToyBrick className="h-8 w-8 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl font-headline">Welcome back</CardTitle>
-          <CardDescription>Enter your credentials to access your account.</CardDescription>
+          <CardDescription>
+            Enter your credentials to access your account.
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
@@ -73,8 +82,9 @@ export default function LoginPage() {
                 required
               />
             </div>
-             <p className="text-xs text-muted-foreground px-1">
-                Hint: Use email `admin@toycycle.com` and any password for admin access.
+            <p className="text-xs text-muted-foreground px-1">
+              Hint: Use email `admin@toycycle.com` and any password for admin
+              access.
             </p>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
@@ -82,11 +92,14 @@ export default function LoginPage() {
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-             <p className="text-sm text-center text-muted-foreground">
-                Don't have an account?{' '}
-                <Link href="/signup" className="underline text-primary hover:text-primary/80">
-                    Sign up
-                </Link>
+            <p className="text-sm text-center text-muted-foreground">
+              Don't have an account?{" "}
+              <Link
+                href="/signup"
+                className="underline text-primary hover:text-primary/80"
+              >
+                Sign up
+              </Link>
             </p>
           </CardFooter>
         </form>

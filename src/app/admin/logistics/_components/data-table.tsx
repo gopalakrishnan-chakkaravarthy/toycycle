@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -14,17 +14,25 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
-import { DataTableToolbar } from './data-table-toolbar';
-import { logisticsStatusEnum } from '@/db/schema';
-import { requestRecollection } from '../actions';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { DataTableToolbar } from "./data-table-toolbar";
+import { logisticsStatusEnum } from "@/db/schema";
+import { requestRecollection } from "../actions";
+import { useAuth } from "@/context/auth-context";
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
 }
 
 export function LogisticsDataTable<TData, TValue>({
@@ -32,17 +40,25 @@ export function LogisticsDataTable<TData, TValue>({
   data,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleRequestRecollection = async (item: TData & { id: number }) => {
-    const result = await requestRecollection(item.id);
+    const result = await requestRecollection(user, item.id);
     if (result.error) {
-      toast({ variant: 'destructive', title: 'Error', description: result.error });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: result.error,
+      });
     } else {
-      toast({ title: 'Success', description: result.message });
+      toast({ title: "Success", description: result.message });
     }
   };
 
@@ -70,12 +86,15 @@ export function LogisticsDataTable<TData, TValue>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
-  
-  const statusOptions = logisticsStatusEnum.enumValues.map(s => ({label: s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' '), value: s}));
+
+  const statusOptions = logisticsStatusEnum.enumValues.map((s) => ({
+    label: s.charAt(0).toUpperCase() + s.slice(1).replace("_", " "),
+    value: s,
+  }));
 
   return (
     <div className="space-y-4">
-       <DataTableToolbar table={table} statusOptions={statusOptions} />
+      <DataTableToolbar table={table} statusOptions={statusOptions} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -101,7 +120,7 @@ export function LogisticsDataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
+                  data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
