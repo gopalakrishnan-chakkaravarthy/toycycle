@@ -341,20 +341,17 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
 
     try {
       await sgMail.send(msg);
-      revalidatePath('/schedule');
       revalidatePath('/workflow');
       return { message: 'Pickup scheduled and email sent successfully.' };
     } catch (error) {
       console.error('SendGrid Error:', error);
       // If the email fails, we still want to inform the user that the pickup was scheduled.
       // In a real application, you might handle this more robustly (e.g., retry sending).
-      revalidatePath('/schedule');
       revalidatePath('/workflow');
       return { message: 'Pickup scheduled, but failed to send confirmation email.' };
     }
   }
 
-  revalidatePath('/schedule');
   revalidatePath('/workflow');
   // Fallback if SendGrid is not configured
   return { message: 'Pickup scheduled successfully.' };

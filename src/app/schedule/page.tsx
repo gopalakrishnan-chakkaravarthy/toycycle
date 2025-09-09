@@ -65,8 +65,8 @@ export default function SchedulePage() {
   const handleFormSuccess = (newPickupDate: Date) => {
     setIsModalOpen(false);
     setScheduledDays(prev => [...prev, newPickupDate]);
-    // Setting selectedDate will trigger the useEffect to reload pickups
     setSelectedDate(newPickupDate);
+    handleActionComplete();
   }
   
   const handleActionComplete = () => {
