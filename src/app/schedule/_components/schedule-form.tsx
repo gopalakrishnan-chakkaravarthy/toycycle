@@ -277,7 +277,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                         <FormControl>
                                             <SelectTrigger>
                                             <SelectValue placeholder="Select a partner" />
-                                            </Trigger>
+                                            </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
                                             {partners.map(p => (
