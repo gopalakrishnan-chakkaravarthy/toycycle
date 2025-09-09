@@ -49,19 +49,20 @@ export default function SchedulePage() {
         setScheduledDays(scheduledDaysData);
     }
     loadData();
+  }, []);
+
+  useEffect(() => {
     loadPickups(selectedDate);
-  }, [loadPickups, selectedDate])
+  }, [loadPickups, selectedDate]);
+
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
-    if (date) {
-        loadPickups(date);
-    }
   }
 
   const handleFormSuccess = (newPickupDate: Date) => {
     setScheduledDays(prev => [...prev, newPickupDate]);
-    loadPickups(newPickupDate);
+    setSelectedDate(newPickupDate);
     setIsModalOpen(false);
   }
 
