@@ -117,7 +117,11 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
     if (selectedDate) {
         form.setValue('pickupDate', selectedDate);
     }
-  }, [selectedDate, form]);
+    if (user) {
+      form.setValue('name', user.name);
+      form.setValue('email', user.email);
+    }
+  }, [selectedDate, user, form]);
   
   const pickupType = form.watch('pickupType');
   const locationId = form.watch('locationId');
@@ -440,5 +444,3 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
     </Dialog>
   );
 }
-
-    
