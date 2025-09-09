@@ -9,6 +9,7 @@ import { AccessoryType, Location, Partner, Pickup, ToyCondition, pickups, pickup
 import { and, eq } from 'drizzle-orm';
 import type { User } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { getCurrentUser } from '@/lib/auth';
 
 const schedulePickupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -149,11 +150,10 @@ export async function getPickupsForDate(user: User | null, date: Date | undefine
 }
 
 export async function updatePickupStatus(pickupId: number, status: 'scheduled' | 'completed' | 'cancelled') {
-    const userJson = revalidatePath('/', 'layout');
-    if (!userJson) {
+    const user = await getCurrentUser();
+    if (!user) {
       return {error: "You must be logged in to perform this action."};
     }
-    const user: User = JSON.parse(userJson);
 
     if (user.role !== 'admin') {
         return { error: 'You are not authorized to perform this action.' };
@@ -198,7 +198,41 @@ export async function updatePickupStatus(pickupId: number, status: 'scheduled' |
         console.error('Failed to update pickup status:', error);
         return { error: 'Failed to update pickup status.' };
     }
+}
 
+export async function deletePickup(pickupId: number) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { error: 'You must be signed in to delete a pickup.' };
+  }
+
+  if (!process.env.POSTGRES_URL) {
+    return { error: 'Database not configured.' };
+  }
+
+  try {
+    const pickupToDelete = await db.query.pickups.findFirst({
+      where: eq(pickups.id, pickupId),
+    });
+
+    if (!pickupToDelete) {
+      return { error: 'Pickup not found.' };
+    }
+
+    // Admins can delete any pickup, users can only delete their own
+    if (user.role !== 'admin' && pickupToDelete.email !== user.email) {
+      return { error: 'You are not authorized to delete this pickup.' };
+    }
+
+    await db.delete(pickups).where(eq(pickups.id, pickupId));
+
+    revalidatePath('/schedule');
+    revalidatePath('/workflow');
+    return { message: 'Pickup successfully deleted.' };
+  } catch (error) {
+    console.error('Failed to delete pickup:', error);
+    return { error: 'Failed to delete pickup.' };
+  }
 }
 
 

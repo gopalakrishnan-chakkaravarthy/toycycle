@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { updatePickupStatus } from '../actions';
+import { updatePickupStatus, deletePickup } from '../actions';
 
 const getPickupTypeIcon = (type: string) => {
     switch (type) {
@@ -25,7 +25,7 @@ const getPickupLocation = (pickup: DetailedPickup) => {
         case 'my-address': return pickup.address;
         case 'drop-off': return pickup.location?.name;
         case 'partner': return pickup.partner?.name;
-        default: return 'N/A';
+        default: 'N/A';
     }
 }
 
@@ -39,7 +39,7 @@ const getStatusVariant = (status: string) => {
 }
 
 
-export function PickupList({ pickups }: { pickups: DetailedPickup[] }) {
+export function PickupList({ pickups, onActionComplete }: { pickups: DetailedPickup[], onActionComplete: () => void }) {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -49,6 +49,17 @@ export function PickupList({ pickups }: { pickups: DetailedPickup[] }) {
         toast({ variant: 'destructive', title: 'Error', description: result.error });
     } else {
         toast({ title: 'Success', description: result.message });
+        onActionComplete();
+    }
+  }
+
+  const handleDelete = async (pickupId: number) => {
+    const result = await deletePickup(pickupId);
+    if (result.error) {
+        toast({ variant: 'destructive', title: 'Error', description: result.error });
+    } else {
+        toast({ title: 'Success', description: result.message });
+        onActionComplete();
     }
   }
 
@@ -123,7 +134,7 @@ export function PickupList({ pickups }: { pickups: DetailedPickup[] }) {
                              <DropdownMenuSeparator />
                           </>
                          )}
-                        <DropdownMenuItem disabled className="text-destructive">
+                        <DropdownMenuItem onClick={() => handleDelete(pickup.id)} className="text-destructive">
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>

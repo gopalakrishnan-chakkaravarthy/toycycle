@@ -34,8 +34,10 @@ export default function SchedulePage() {
 
   const loadPickups = useCallback((date: Date | undefined) => {
     startTransition(async () => {
-      const fetchedPickups = await getPickupsForDate(user, date);
-      setPickups(fetchedPickups);
+      if (user) {
+        const fetchedPickups = await getPickupsForDate(user, date);
+        setPickups(fetchedPickups);
+      }
     });
   }, [user]);
 
@@ -61,9 +63,14 @@ export default function SchedulePage() {
   }
 
   const handleFormSuccess = (newPickupDate: Date) => {
-    setScheduledDays(prev => [...prev, newPickupDate]);
-    setSelectedDate(newPickupDate);
     setIsModalOpen(false);
+    setScheduledDays(prev => [...prev, newPickupDate]);
+    // Setting selectedDate will trigger the useEffect to reload pickups
+    setSelectedDate(newPickupDate);
+  }
+  
+  const handleActionComplete = () => {
+    loadPickups(selectedDate);
   }
 
   return (
@@ -112,7 +119,7 @@ export default function SchedulePage() {
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : (
-                        <PickupList pickups={pickups} />
+                        <PickupList pickups={pickups} onActionComplete={handleActionComplete} />
                     )}
                 </CardContent>
             </Card>
