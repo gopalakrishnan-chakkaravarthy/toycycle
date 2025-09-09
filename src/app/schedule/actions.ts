@@ -214,24 +214,41 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
   // Save to database if configured
   if (process.env.POSTGRES_URL) {
     try {
-        const { collectionCost, ...rest } = validatedFields.data;
+        const {
+            name,
+            email,
+            pickupType,
+            address,
+            locationId,
+            partnerId,
+            pickupDate,
+            timeSlot,
+            toyConditionId,
+            accessoryTypeId,
+            notes,
+            collectionCost,
+        } = validatedFields.data;
         
-        const cost = collectionCost === '' || collectionCost === undefined || collectionCost === null ? null : parseFloat(collectionCost);
-        
-        if (cost !== null && isNaN(cost)) {
-            return {
-                message: 'Invalid collection cost',
-                error: 'Please enter a valid number for the collection cost.',
-            };
+        let cost: number | null = null;
+        if (collectionCost && collectionCost.trim() !== '') {
+            const parsedCost = parseFloat(collectionCost);
+            if (!isNaN(parsedCost)) {
+                cost = parsedCost;
+            }
         }
 
         const dataToInsert = {
-            ...rest,
-            pickupDate: format(new Date(validatedFields.data.pickupDate), 'yyyy-MM-dd'),
-            locationId: validatedFields.data.locationId ? parseInt(validatedFields.data.locationId) : null,
-            partnerId: validatedFields.data.partnerId ? parseInt(validatedFields.data.partnerId) : null,
-            toyConditionId: parseInt(validatedFields.data.toyConditionId),
-            accessoryTypeId: parseInt(validatedFields.data.accessoryTypeId),
+            name,
+            email,
+            pickupType,
+            address: address || null,
+            locationId: locationId ? parseInt(locationId) : null,
+            partnerId: partnerId ? parseInt(partnerId) : null,
+            pickupDate: format(new Date(pickupDate), 'yyyy-MM-dd'),
+            timeSlot,
+            toyConditionId: parseInt(toyConditionId),
+            accessoryTypeId: parseInt(accessoryTypeId),
+            notes: notes || null,
             collectionCost: cost,
         };
 
