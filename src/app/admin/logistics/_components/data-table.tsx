@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DataTableToolbar } from './data-table-toolbar';
 import { logisticsStatusEnum } from '@/db/schema';
 import { requestRecollection } from '../actions';
+import { useAuth } from '@/context/auth-context';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -36,9 +37,10 @@ export function LogisticsDataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleRequestRecollection = async (item: TData & { id: number }) => {
-    const result = await requestRecollection(item.id);
+    const result = await requestRecollection(user, item.id);
     if (result.error) {
       toast({ variant: 'destructive', title: 'Error', description: result.error });
     } else {

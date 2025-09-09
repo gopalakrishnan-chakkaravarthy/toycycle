@@ -6,6 +6,7 @@ import { inventory, logisticsStatusEnum, ecommerceIntegrations } from '@/db/sche
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import type { User } from '@/lib/auth';
 
 const formActionState = z.object({
   message: z.string(),
@@ -45,7 +46,14 @@ export async function getRedistributedInventory() {
 }
 
 
-export async function requestRecollection(itemId: number) {
+export async function requestRecollection(user: User | null, itemId: number) {
+    if (!user) {
+      return {error: "You must be logged in to perform this action."};
+    }
+    if (user.role !== 'admin') {
+        return { error: 'You are not authorized to perform this action.' };
+    }
+
     if (!process.env.POSTGRES_URL) {
         return { error: 'Database not configured.' };
     }
