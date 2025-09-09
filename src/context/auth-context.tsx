@@ -2,7 +2,8 @@
 'use client';
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { login as apiLogin, User, logout as apiLogout, getCurrentUser } from '@/lib/auth';
+import { User, getCurrentUser } from '@/lib/auth';
+import { login as apiLogin, logout as apiLogout } from '@/lib/actions/auth';
 import { usePathname, useRouter } from 'next/navigation';
 
 interface AuthContextType {

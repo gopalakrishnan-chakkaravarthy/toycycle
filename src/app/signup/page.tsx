@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, ToyBrick } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { registerUser } from '@/lib/auth';
+import { registerUser } from '@/lib/actions/auth';
 
 export default function SignUpPage() {
   const [name, setName] = useState('');
