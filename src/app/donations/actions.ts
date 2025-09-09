@@ -3,15 +3,13 @@
 
 import { db } from '@/db';
 import { donations, inventory } from '@/db/schema';
-import { getCurrentUser } from '@/lib/auth';
+import type { User } from '@/lib/auth';
 import { eq } from 'drizzle-orm';
 import type { Donation, Inventory } from '@/db/schema';
 
 export type DetailedDonation = Donation & { inventory: Inventory | null };
 
-export async function getDonationsForUser(): Promise<DetailedDonation[]> {
-  const user = await getCurrentUser();
-
+export async function getDonationsForUser(user: User | null): Promise<DetailedDonation[]> {
   if (!user || !process.env.POSTGRES_URL) {
     return [];
   }

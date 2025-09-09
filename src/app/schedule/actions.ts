@@ -7,8 +7,9 @@ import { format } from 'date-fns';
 import { db } from '@/db';
 import { AccessoryType, Location, Partner, Pickup, ToyCondition, pickups, pickupStatusEnum } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
-import { getCurrentUser } from '@/lib/auth';
+import type { User } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { getCurrentUser } from '@/lib/auth';
 
 const schedulePickupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -121,8 +122,7 @@ export type DetailedPickup = Pickup & {
   partner: Partner | null;
 }
 
-export async function getPickupsForDate(date: Date): Promise<DetailedPickup[]> {
-    const user = await getCurrentUser();
+export async function getPickupsForDate(date: Date, user: User | null): Promise<DetailedPickup[]> {
     if (!user || !process.env.POSTGRES_URL) {
         return [];
     }

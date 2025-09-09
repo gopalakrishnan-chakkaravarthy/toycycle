@@ -12,9 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { PickupList } from './_components/pickup-list';
+import { useAuth } from '@/context/auth-context';
 
 
 export default function SchedulePage() {
+  const { user } = useAuth();
   const [data, setData] = useState<{
     toyConditions: ToyCondition[];
     accessoryTypes: AccessoryType[];
@@ -33,10 +35,10 @@ export default function SchedulePage() {
   const loadPickups = useCallback((date: Date | undefined) => {
     if (!date) return;
     startTransition(async () => {
-      const fetchedPickups = await getPickupsForDate(date);
+      const fetchedPickups = await getPickupsForDate(date, user);
       setPickups(fetchedPickups);
     });
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     async function loadData() {

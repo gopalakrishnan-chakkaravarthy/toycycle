@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PackageCheck, PackageSearch, Truck, User, Calendar, Handshake } from 'lucide-react';
 import { getDonationsForUser } from './actions';
 import { DetailedDonation } from './actions';
+import { getCurrentUser } from '@/lib/auth';
 
 type Status = 'Redistributed' | 'Processing' | 'Picked Up';
 
@@ -47,7 +48,8 @@ const formatDateTime = (dateString: string | Date) => {
 
 
 export default async function DonationsPage() {
-  const donations = await getDonationsForUser();
+  const user = await getCurrentUser();
+  const donations = await getDonationsForUser(user);
 
   return (
     <AppLayout>
