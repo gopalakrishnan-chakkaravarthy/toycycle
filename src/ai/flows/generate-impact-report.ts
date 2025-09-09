@@ -40,6 +40,7 @@ const prompt = ai.definePrompt({
   name: 'generateImpactReportPrompt',
   input: {schema: GenerateImpactReportInputSchema},
   output: {schema: GenerateImpactReportOutputSchema},
+  model: ai.model,
   prompt: `You are an impact report generator for ToyCycle, which collects, sanitizes, and redistributes unused kids' toys and accessories.
 
   Generate a personalized impact report for user {{userId}} based on the following information:
