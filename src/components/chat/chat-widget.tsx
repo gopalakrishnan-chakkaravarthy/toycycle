@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useTransition } from 'react';
@@ -35,7 +36,7 @@ export function ChatWidget() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input || isPending) return;
+    if (!input || isPending || !user) return;
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -99,7 +100,7 @@ export function ChatWidget() {
                         >
                             <div
                                 className="prose prose-sm"
-                                dangerouslySetInnerHTML={{ __html: marked(message.content) as string }}
+                                dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
                             />
                         </div>
                         ))}
@@ -118,9 +119,9 @@ export function ChatWidget() {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder="Ask me something..."
-                        disabled={isPending}
+                        disabled={isPending || !user}
                     />
-                    <Button type="submit" size="icon" disabled={isPending}>
+                    <Button type="submit" size="icon" disabled={isPending || !user}>
                         <Send className="h-4 w-4" />
                         <span className="sr-only">Send</span>
                     </Button>

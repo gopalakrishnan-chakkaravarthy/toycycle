@@ -22,7 +22,7 @@ export async function getDonationsForUser(user: User | null): Promise<DetailedDo
       },
       orderBy: (donations, { desc }) => [desc(donations.donatedAt)],
     });
-    return userDonations as DetailedDonation[];
+    return userDonations;
   } catch (error) {
     console.error("Failed to fetch user donations:", error);
     return [];

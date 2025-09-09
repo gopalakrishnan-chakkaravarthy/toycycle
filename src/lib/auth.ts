@@ -14,17 +14,22 @@ export interface User {
   avatar?: string;
 }
 
-export async function getCurrentUser(): Promise<User | null> {
-    const userCookie = cookies().get('toycycle-user');
-    if (userCookie) {
+export async function parseUserCookie(userCookieValue: string | undefined): Promise<User | null> {
+    if (userCookieValue) {
         try {
-            return JSON.parse(userCookie.value);
+            return JSON.parse(userCookieValue);
         } catch (e) {
             return null;
         }
     }
     return null;
 }
+
+export async function getCurrentUser(): Promise<User | null> {
+    const userCookie = cookies().get('toycycle-user');
+    return await parseUserCookie(userCookie?.value);
+}
+
 
 // DB-based login function
 const dbLogin = async (email: string): Promise<User> => {

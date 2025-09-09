@@ -10,11 +10,12 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, parseUserCookie } from '@/lib/auth';
 import { db } from '@/db';
 import { donations, inventory, pickups } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { startOfDay } from 'date-fns';
+import { cookies } from 'next/headers';
 
 // Tool to get donation status
 const getDonationStatusTool = ai.defineTool(
@@ -104,6 +105,7 @@ const schedulePickupTool = ai.defineTool(
 const ChatInputSchema = z.object({
   history: z.array(z.any()),
   prompt: z.string(),
+  user: z.any().optional(), // Make user optional here
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
@@ -117,16 +119,18 @@ const chatPrompt = ai.definePrompt({
         Be conversational and guide the user.
         If scheduling a pickup, ensure you gather all necessary information (date, time slot, location/address) before calling the schedulePickup tool.
         Today's date is ${new Date().toLocaleDateString()}.
-        The current user is named {{user.name}}.
+        {{#if user}}The current user is named {{user.name}}.{{/if}}
     `,
     history: '{{history}}',
     prompt: '{{prompt}}'
 });
 
 export async function chat(input: ChatInput) {
-    const user = await getCurrentUser();
+    const userCookie = cookies().get('toycycle-user');
+    const user = await parseUserCookie(userCookie?.value);
+
     if (!user) {
-      return { response: "You must be logged in to use the chat." };
+      return { text: "You must be logged in to use the chat." };
     }
 
     const {stream, response} = chatPrompt.stream({...input, user});
@@ -134,5 +138,6 @@ export async function chat(input: ChatInput) {
         // You can add logic here to handle streaming chunks if needed on the server
     }
     
-    return response;
+    const result = await response;
+    return result;
 }
