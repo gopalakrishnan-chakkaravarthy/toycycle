@@ -141,7 +141,7 @@ export async function getPickupsForDate(user: User | null, date: Date | undefine
             },
             orderBy: (pickups, { asc }) => [asc(pickups.timeSlot)],
         });
-        return result as DetailedPickup[];
+        return result;
     } catch (error) {
         console.error("Failed to fetch pickups for date:", error);
         return [];
