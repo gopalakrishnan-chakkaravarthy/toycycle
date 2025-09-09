@@ -33,9 +33,8 @@ export default function SchedulePage() {
 
 
   const loadPickups = useCallback((date: Date | undefined) => {
-    if (!date) return;
     startTransition(async () => {
-      const fetchedPickups = await getPickupsForDate(date, user);
+      const fetchedPickups = await getPickupsForDate(user, date);
       setPickups(fetchedPickups);
     });
   }, [user]);

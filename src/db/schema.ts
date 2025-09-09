@@ -1,5 +1,5 @@
 import { pgTable, text, serial, varchar, pgEnum, integer, timestamp, date, boolean, decimal } from 'drizzle-orm/pg-core';
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
 
 export const roleEnum = pgEnum('role', ['admin', 'user']);
 export const inventoryStatusEnum = pgEnum('inventory_status', ['received', 'sanitizing', 'listed', 'redistributed']);
@@ -87,6 +87,18 @@ export const pickups = pgTable('pickups', {
     collectionCost: decimal('collection_cost', { precision: 10, scale: 2 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+export const pickupsRelations = relations(pickups, ({ one }) => ({
+	location: one(locations, {
+		fields: [pickups.locationId],
+		references: [locations.id],
+	}),
+    partner: one(partners, {
+        fields: [pickups.partnerId],
+        references: [partners.id],
+    }),
+}));
+
 
 export const ecommerceIntegrations = pgTable('ecommerce_integrations', {
   id: serial('id').primaryKey(),

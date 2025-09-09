@@ -9,7 +9,6 @@ import { AccessoryType, Location, Partner, Pickup, ToyCondition, pickups, pickup
 import { and, eq } from 'drizzle-orm';
 import type { User } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { getCurrentUser } from '@/lib/auth';
 
 const schedulePickupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -122,14 +121,13 @@ export type DetailedPickup = Pickup & {
   partner: Partner | null;
 }
 
-export async function getPickupsForDate(date: Date, user: User | null): Promise<DetailedPickup[]> {
-    if (!user || !process.env.POSTGRES_URL) {
+export async function getPickupsForDate(user: User | null, date: Date | undefined): Promise<DetailedPickup[]> {
+    if (!user || !date || !process.env.POSTGRES_URL) {
         return [];
     }
      try {
         const whereClause = user.role === 'admin' 
             ? eq(pickups.pickupDate, format(date, 'yyyy-MM-dd'))
-            // @ts-ignore
             : and(
                 eq(pickups.pickupDate, format(date, 'yyyy-MM-dd')),
                 eq(pickups.name, user.name)
@@ -151,8 +149,13 @@ export async function getPickupsForDate(date: Date, user: User | null): Promise<
 }
 
 export async function updatePickupStatus(pickupId: number, status: 'scheduled' | 'completed' | 'cancelled') {
-    const user = await getCurrentUser();
-    if (!user || user.role !== 'admin') {
+    const userJson = revalidatePath('/', 'layout');
+    if (!userJson) {
+      return {error: "You must be logged in to perform this action."};
+    }
+    const user: User = JSON.parse(userJson);
+
+    if (user.role !== 'admin') {
         return { error: 'You are not authorized to perform this action.' };
     }
     if (!process.env.POSTGRES_URL) {
@@ -226,12 +229,12 @@ export async function schedulePickup(prevState: z.infer<typeof formActionState>,
             toyConditionId,
             accessoryTypeId,
             notes,
-            collectionCost,
         } = validatedFields.data;
         
+        const costValue = validatedFields.data.collectionCost;
         let cost: number | null = null;
-        if (collectionCost && collectionCost.trim() !== '') {
-            const parsedCost = parseFloat(collectionCost);
+        if (costValue && costValue.trim() !== '') {
+            const parsedCost = parseFloat(costValue);
             if (!isNaN(parsedCost)) {
                 cost = parsedCost;
             }
