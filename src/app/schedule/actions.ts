@@ -324,18 +324,13 @@ export async function schedulePickup(validatedData: z.infer<typeof schedulePicku
 
     try {
       await sgMail.send(msg);
-      revalidatePath('/workflow');
       return { success: true, message: 'Pickup scheduled and email sent successfully.' };
     } catch (error) {
       console.error('SendGrid Error:', error);
-      revalidatePath('/workflow');
       return { success: true, message: 'Pickup scheduled, but failed to send confirmation email.' };
     }
   }
 
-  revalidatePath('/workflow');
   // Fallback if SendGrid is not configured
   return { success: true, message: 'Pickup scheduled successfully.' };
 }
-
-    
