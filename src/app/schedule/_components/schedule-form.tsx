@@ -4,12 +4,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { CalendarIcon, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { format } from 'date-fns';
-import { useActionState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { AccessoryType, Location, Partner, ToyCondition } from '@/db/schema';
 import { schedulePickup } from '../actions';
+import type { SchedulePickupResult } from '../actions';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -34,10 +35,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { SubmitButton } from '@/app/admin/_components/submit-button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/auth-context';
+import { Loader2 } from 'lucide-react';
 
 const scheduleFormSchema = z.object({
   pickupType: z.enum(['my-address', 'drop-off', 'partner']),
@@ -94,16 +95,10 @@ interface ScheduleFormProps {
     partners: Partner[];
 }
 
-const initialState = {
-  message: '',
-  error: undefined as string | Record<string, string[] | undefined> | undefined,
-};
-
-
 export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyConditions, accessoryTypes, locations, partners }: ScheduleFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [state, formAction] = useActionState(schedulePickup, initialState);
+  const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleFormSchema),
@@ -119,32 +114,35 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
   });
 
   useEffect(() => {
-    form.setValue('pickupDate', selectedDate || new Date());
+    if (selectedDate) {
+        form.setValue('pickupDate', selectedDate);
+    }
   }, [selectedDate, form]);
   
   const pickupType = form.watch('pickupType');
   const locationId = form.watch('locationId');
   const partnerId = form.watch('partnerId');
 
-  useEffect(() => {
-    if (!state) return;
-    if (state.message && !state.error) {
-       const timeSlot = form.getValues('timeSlot');
+
+  const onSubmit = async (data: ScheduleFormValues) => {
+    setIsLoading(true);
+    const result: SchedulePickupResult = await schedulePickup(data);
+    setIsLoading(false);
+
+    if (result.success) {
        toast({
         title: "Pickup Scheduled!",
-        description: `We'll see you on ${selectedDate ? format(selectedDate, 'PPP') : 'your selected date'} between ${timeSlot}.`,
+        description: result.message,
       });
       form.reset({ name: user?.name ?? '', email: user?.email ?? '', address: '', notes: '', pickupType: 'my-address', collectionCost: undefined });
       if (selectedDate) {
         onSuccess(selectedDate);
       }
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
     }
-    if (typeof state.error === 'string') {
-        toast({ variant: 'destructive', title: 'Error', description: state.error });
-    }
-  }, [state, toast, form, user, onSuccess, selectedDate]);
+  };
 
-  const fieldErrors = typeof state.error === 'object' ? state.error : {};
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -156,8 +154,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
             
             <div className="grid gap-8 md:grid-cols-2 pt-4">
                 <Form {...form}>
-                <form action={formAction} className="space-y-6">
-                    <input type="hidden" name="pickupDate" value={selectedDate?.toISOString()} />
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <ScrollArea className="h-[60vh] pr-4">
                         <div className="space-y-6">
                             <FormField
@@ -171,7 +168,6 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                         onValueChange={field.onChange}
                                         defaultValue={field.value}
                                         className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-                                        name={field.name}
                                         >
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                             <FormControl>
@@ -208,7 +204,6 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                         <FormControl>
                                         <Input placeholder="Jane Doe" {...field} />
                                         </FormControl>
-                                        {fieldErrors?.name && <p className="text-destructive text-sm">{fieldErrors.name[0]}</p>}
                                         <FormMessage />
                                     </FormItem>
                                     )}
@@ -222,7 +217,6 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                         <FormControl>
                                         <Input placeholder="jane.doe@example.com" {...field} />
                                         </FormControl>
-                                        {fieldErrors?.email && <p className="text-destructive text-sm">{fieldErrors.email[0]}</p>}
                                         <FormMessage />
                                     </FormItem>
                                     )}
@@ -251,7 +245,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Community Drop-off Point</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
                                             <SelectValue placeholder="Select a location" />
@@ -275,11 +269,11 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Partner Organization</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
                                             <SelectValue placeholder="Select a partner" />
-                                            </SelectTrigger>
+                                            </Trigger>
                                         </FormControl>
                                         <SelectContent>
                                             {partners.map(p => (
@@ -316,7 +310,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Time Slot</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select a time slot" />
@@ -340,7 +334,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Toy Condition</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select condition" />
@@ -362,7 +356,7 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Accessory Type</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select type" />
@@ -405,7 +399,10 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
                     </ScrollArea>
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-                        <SubmitButton>Schedule Pickup</SubmitButton>
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Schedule Pickup
+                        </Button>
                     </DialogFooter>
                 </form>
                 </Form>
@@ -443,3 +440,5 @@ export function ScheduleForm({ isOpen, setIsOpen, onSuccess, selectedDate, toyCo
     </Dialog>
   );
 }
+
+    
