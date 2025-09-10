@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -42,7 +43,11 @@ export async function createInventoryItem(prevState: z.infer<typeof formActionSt
 
   try {
     const db = await getDb();
-    await db.insert(inventory).values(validatedFields.data);
+    const dataToInsert = { ...validatedFields.data };
+    if (!dataToInsert.conditionId) {
+        dataToInsert.conditionId = 1;
+    }
+    await db.insert(inventory).values(dataToInsert);
     revalidatePath('/warehouse');
     return { message: 'Item created successfully.' };
   } catch (error) {
