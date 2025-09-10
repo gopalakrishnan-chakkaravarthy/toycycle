@@ -86,6 +86,17 @@ export const inventory = pgTable("inventory", {
   logisticsStatus: logisticsStatusEnum("logistics_status"),
 });
 
+export const inventoryRelations = relations(inventory, ({ one }) => ({
+  condition: one(toyConditions, {
+    fields: [inventory.conditionId],
+    references: [toyConditions.id],
+  }),
+  partner: one(partners, {
+    fields: [inventory.redistributedToPartnerId],
+    references: [partners.id],
+  }),
+}));
+
 export const donations = pgTable("donations", {
   id: serial("id").primaryKey(),
   userId: text("user_id")
@@ -96,6 +107,17 @@ export const donations = pgTable("donations", {
     .notNull(),
   donatedAt: timestamp("donated_at").defaultNow().notNull(),
 });
+
+export const donationsRelations = relations(donations, ({ one }) => ({
+  user: one(users, {
+    fields: [donations.userId],
+    references: [users.id],
+  }),
+  inventory: one(inventory, {
+    fields: [donations.inventoryId],
+    references: [inventory.id],
+  }),
+}));
 
 export const campaigns = pgTable("campaigns", {
   id: serial("id").primaryKey(),

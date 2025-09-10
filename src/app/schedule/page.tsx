@@ -106,9 +106,9 @@ export default function SchedulePage() {
                 selected={selectedDate}
                 onSelect={handleDateSelect}
                 className="rounded-md"
-                disabled={(date) =>
-                  date < new Date(new Date().setDate(new Date().getDate() - 1))
-                }
+                // disabled={(date) =>
+                //   date < new Date(new Date().setDate(new Date().getDate() - 1))
+                // }
                 modifiers={{ scheduled: scheduledDays }}
                 modifiersClassNames={{
                   scheduled: "font-bold text-primary",
