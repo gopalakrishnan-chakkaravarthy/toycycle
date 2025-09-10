@@ -9,7 +9,7 @@ import { AccessoryType, Location, Partner, Pickup, ToyCondition, pickups, pickup
 import { and, eq } from 'drizzle-orm';
 import type { User } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/actions/auth';
 
 const schedulePickupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),

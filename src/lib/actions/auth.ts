@@ -4,6 +4,7 @@
 import { eq } from 'drizzle-orm';
 import type { NewUser, User } from '@/db/schema';
 import { cookies } from 'next/headers';
+import { parseUserCookie } from '@/lib/auth';
 
 // DB-based login function
 const dbLogin = async (email: string): Promise<User> => {
@@ -120,4 +121,9 @@ export const registerUser = async (name: string, email: string, pass: string): P
 
 export const logout = async () => {
     cookies().delete('toycycle-user');
+}
+
+export async function getCurrentUser(): Promise<User | null> {
+    const userCookie = cookies().get('toycycle-user');
+    return await parseUserCookie(userCookie?.value);
 }

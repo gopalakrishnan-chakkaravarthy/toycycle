@@ -10,12 +10,11 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getCurrentUser, parseUserCookie } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/actions/auth';
 import { db } from '@/db';
 import { donations, inventory, pickups } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { startOfDay } from 'date-fns';
-import { cookies } from 'next/headers';
 
 // Tool to get donation status
 const getDonationStatusTool = ai.defineTool(
@@ -105,7 +104,6 @@ const schedulePickupTool = ai.defineTool(
 const ChatInputSchema = z.object({
   history: z.array(z.any()),
   prompt: z.string(),
-  user: z.any().optional(), // Make user optional here
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
@@ -113,7 +111,7 @@ export type ChatInput = z.infer<typeof ChatInputSchema>;
 const chatPrompt = ai.definePrompt({
     name: 'chatPrompt',
     tools: [getDonationStatusTool, schedulePickupTool],
-    input: { schema: ChatInputSchema },
+    input: { schema: ChatInputSchema.extend({ user: z.any().optional() }) },
     system: `You are a friendly and helpful chat assistant for ToyCycle.
         Your goal is to assist users with scheduling toy pickups and checking the status of their donations.
         Be conversational and guide the user.
@@ -126,8 +124,7 @@ const chatPrompt = ai.definePrompt({
 });
 
 export async function chat(input: ChatInput) {
-    const userCookie = cookies().get('toycycle-user');
-    const user = await parseUserCookie(userCookie?.value);
+    const user = await getCurrentUser();
 
     if (!user) {
       return { text: "You must be logged in to use the chat." };

@@ -11,7 +11,7 @@ import { getInventoryCountsByStatus, getDonationsByLocation } from './inventory/
 import { InventoryJourney } from './inventory/_components/inventory-journey';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ImpactReportGenerator } from './_components/impact-report-generator';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/actions/auth';
 import { DonationsChart } from './inventory/_components/donations-chart';
 import type { User } from '@/lib/auth';
 

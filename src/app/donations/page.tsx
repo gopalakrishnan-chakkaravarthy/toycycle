@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PackageCheck, PackageSearch, Truck, User, Calendar, Handshake } from 'lucide-react';
 import { getDonationsForUser } from './actions';
 import { DetailedDonation } from './actions';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/actions/auth';
 
 type Status = 'Redistributed' | 'Processing' | 'Picked Up';
 
