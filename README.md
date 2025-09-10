@@ -69,6 +69,89 @@ npm run dev
 
 The application will be available at `http://localhost:3000`.
 
+## Architecture Diagram
+
+This diagram outlines the technical architecture of the ToyCycle application.
+
+```mermaid
+graph TD
+    subgraph "User's Browser"
+        A[Next.js Frontend: React, ShadCN, Tailwind]
+    end
+
+    subgraph "Server-side (Node.js)"
+        B[Next.js App Router]
+        C[Server Components]
+        D[Server Actions]
+        E[Genkit AI Flows]
+        F[Drizzle ORM]
+    end
+
+    subgraph "Google Cloud"
+        G[Google AI Platform: Gemini]
+    end
+
+    subgraph "Database"
+        H[PostgreSQL]
+    end
+
+    A -- "HTTP Requests" --> B
+    B -- "Renders" --> C
+    C -- "Invoke" --> D
+    D -- "Perform Actions & Mutations" --> F
+    C -- "Invoke" --> E
+    E -- "Calls LLM" --> G
+    F -- "Queries" --> H
+```
+
+## Functional Diagram
+
+This diagram illustrates the primary user and admin workflows within the application.
+
+```mermaid
+graph TD
+    subgraph "User Journey"
+        U1[Visits ToyCycle] --> U2{Authenticated?}
+        U2 -- "No" --> U_Auth[Login / Signup Page]
+        U_Auth --> S1[Authentication System]
+        U2 -- "Yes" --> U3
+        U3[Views Impact Dashboard] --> U6[Generates AI Report]
+        U3 --> U4[Schedules a Pickup]
+        U3 --> U5[Views Donation History]
+    end
+
+    subgraph "Admin Journey"
+        A1[Admin Logs In] --> S1
+        S1 --> A2{Is Admin?}
+        A2 -- "Yes" --> A3[Views Admin Dashboard]
+        A3 --> A4[Manages Partners, Locations, etc.]
+        A3 --> A5[Manages Warehouse Inventory]
+        A3 --> A6[Manages Campaigns]
+        A3 --> A7[Views Logistics]
+    end
+
+    subgraph "Core System"
+        S1
+        S2[Database: PostgreSQL + Drizzle]
+        S3[Next.js Server Actions]
+        S4[Genkit AI Flows]
+        S5[Email Service: SendGrid]
+    end
+    
+    U4 -- "Creates Pickup" --> S3
+    S3 -- "Writes to" --> S2
+    S3 -- "Sends Email" --> S5
+    U5 -- "Fetches Data" --> S3
+    U6 -- "Calls" --> S4
+    
+    A4 -- "CRUD Operations" --> S3
+    A5 -- "CRUD Operations" --> S3
+    A6 -- "CRUD Operations" --> S3
+    A7 -- "Fetches Data" --> S3
+
+```
+
+
 ## Features
 
 ### User-Facing Features
