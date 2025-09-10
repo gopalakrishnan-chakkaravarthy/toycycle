@@ -89,7 +89,6 @@ export default function SchedulePage() {
                         selected={selectedDate}
                         onSelect={handleDateSelect}
                         className="rounded-md"
-                        disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
                         modifiers={{ scheduled: scheduledDays }}
                         modifiersClassNames={{
                             scheduled: 'font-bold text-primary',
@@ -107,7 +106,7 @@ export default function SchedulePage() {
                                 {isPending ? 'Loading pickups...' : `${pickups.length} pickup(s) scheduled for this date.`}
                             </CardDescription>
                         </div>
-                         <Button size="sm" onClick={() => setIsModalOpen(true)}>
+                         <Button size="sm" onClick={() => setIsModalOpen(true)} disabled={!selectedDate || selectedDate < new Date(new Date().setDate(new Date().getDate() - 1))}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Add New Pickup
                         </Button>
