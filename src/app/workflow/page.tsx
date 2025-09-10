@@ -4,9 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { getAllPickups, getFilterData } from './actions';
 import { WorkflowFilters } from './_components/workflow-filters';
 import { WorkflowView } from './_components/workflow-view';
-import { ReadonlyURLSearchParams } from 'next/navigation';
 
-export default async function WorkflowPage({ searchParams }: { searchParams: ReadonlyURLSearchParams}) {
+interface WorkflowPageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default async function WorkflowPage({ searchParams }: WorkflowPageProps) {
     const [filterData, initialPickups] = await Promise.all([
         getFilterData(),
         getAllPickups(searchParams)
@@ -30,7 +33,7 @@ export default async function WorkflowPage({ searchParams }: { searchParams: Rea
                     </CardContent>
                 </Card>
                 
-                <WorkflowView initialPickups={initialPickups} />
+                <WorkflowView initialPickups={initialPickups} initialSearchParams={searchParams} />
             </div>
         </AppLayout>
     );

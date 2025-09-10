@@ -1,11 +1,8 @@
-
 'use server';
 
 import { db } from '@/db';
 import { Location, Partner, Pickup, pickups } from '@/db/schema';
 import { and, desc, eq } from 'drizzle-orm';
-import type { ReadonlyURLSearchParams } from 'next/navigation';
-
 
 export type DetailedPickup = Pickup & {
   location: Location | null;
@@ -27,14 +24,14 @@ export async function getFilterData() {
 }
 
 
-export async function getAllPickups(searchParams: ReadonlyURLSearchParams): Promise<DetailedPickup[]> {
+export async function getAllPickups(params: { [key: string]: string | string[] | undefined }): Promise<DetailedPickup[]> {
     if (!process.env.POSTGRES_URL) {
         return [];
     }
 
-    const date = searchParams.get('date');
-    const partnerId = searchParams.get('partnerId');
-    const locationId = searchParams.get('locationId');
+    const date = params.date as string | undefined;
+    const partnerId = params.partnerId as string | undefined;
+    const locationId = params.locationId as string | undefined;
     
     const filters = [];
     if (date) {
@@ -46,7 +43,6 @@ export async function getAllPickups(searchParams: ReadonlyURLSearchParams): Prom
     if (locationId) {
         filters.push(eq(pickups.locationId, parseInt(locationId)));
     }
-
 
      try {
         const result = await db.query.pickups.findMany({

@@ -11,16 +11,21 @@ import { Loader2 } from 'lucide-react';
 
 interface WorkflowViewProps {
     initialPickups: DetailedPickup[];
+    initialSearchParams: { [key: string]: string | string[] | undefined };
 }
 
-export function WorkflowView({ initialPickups }: WorkflowViewProps) {
+export function WorkflowView({ initialPickups, initialSearchParams }: WorkflowViewProps) {
     const searchParams = useSearchParams();
     const [pickups, setPickups] = useState<DetailedPickup[]>(initialPickups);
     const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
         startTransition(async () => {
-            const fetchedPickups = await getAllPickups(searchParams);
+            const params: { [key: string]: string } = {};
+            searchParams.forEach((value, key) => {
+                params[key] = value;
+            });
+            const fetchedPickups = await getAllPickups(params);
             setPickups(fetchedPickups);
         });
     }, [searchParams]);
